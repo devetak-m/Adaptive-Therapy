@@ -104,12 +104,18 @@ class AMB_model:
                     if (i - self.domain_size / 2) ** 2 + (j - self.domain_size / 2) ** 2 < self.R0:
                         self.grid[i, j] = self.resistant_type
             # line walls with normal cells
-            square_size = int(self.domain_size)
-            for i in range(square_size):
-                self.grid[i, 0] = self.normal_type
-                self.grid[i, square_size - 1] = self.normal_type
-                self.grid[0, i] = self.normal_type
-                self.grid[square_size - 1, i] = self.normal_type
+            R = np.floor(((self.domain_size**2 - self.N0) / np.pi)**0.5)
+            # fill in the grid with the value 1 for a circle of radius R around the center
+            for i in range(self.domain_size):   
+                for j in range(self.domain_size):
+                    if (i - self.domain_size/2)**2 + (j - self.domain_size/2)**2 >= R**2:
+                        self.grid[i, j] = self.normal_type           
+            # randomly kill surplus cells so there are exactly N_cells cells using np.random.choice
+            N_generated = np.sum(self.grid==self.normal_type)
+            print(N_generated)
+            cell_locations = np.argwhere(self.grid == self.normal_type)  
+            kill_surplus = np.random.choice(cell_locations.shape[0], N_generated - self.N0, replace=False)
+            self.grid[cell_locations[kill_surplus, 0], cell_locations[kill_surplus, 1]] = 0
             
         elif initial_condition_type == "two_clusters":
             # make a ball of S0 cells
@@ -326,9 +332,14 @@ class AMB_model:
             self.current_therapy = 0
         elif therapy_type == "continuous":
             self.current_therapy = 0
-        elif therapy_type == "adaptive":
-            total = np.sum(self.grid != 0)
-            initial_number = self.S0 + self.R0 + self.N0
+        elif therapy_type == "adaptive":    
+            n_sensitive = np.sum(self.grid == self.sensitive_type)
+            n_resistant = np.sum(self.grid == self.resistant_type)
+            n_normal = np.sum(self.grid == self.normal_type)
+            total = n_sensitive + n_resistant
+            initial_number = self.S0 + self.R0
+            # total = np.sum(self.grid == self.sensitive_type) + np.sum(self.grid == self.resistant_type) + np.sum(self.grid == self.normal_type)
+            # initial_number = self.S0 + self.R0 + self.N0
             if self.current_therapy and total < 0.5 * initial_number:
                 self.current_therapy = 0
             elif not self.current_therapy and total > initial_number:
@@ -344,19 +355,41 @@ class AMB_model:
     def plot_grid(self):
         # plot the grid in different colors for S and R
         # make scatter plot
-        plt.scatter(
-            np.argwhere(self.grid == self.sensitive_type)[:, 0],
-            np.argwhere(self.grid == self.sensitive_type)[:, 1],
-            color="blue",
+        # plot the grid in different colors for S and R
+        # make scatter plot
+        fig, ax = plt.subplots()
+        sensitiveLocations = np.argwhere(self.grid == self.sensitive_type)
+        resistantLocations = np.argwhere(self.grid == self.resistant_type)
+        normalLocations = np.argwhere(self.grid == self.normal_type)
+        scale = 20000 / self.domain_size**2
+        sS = ax.scatter(
+            sensitiveLocations[:, 0],
+            sensitiveLocations[:, 1],
+            c="b",
+            marker="s",
+            s=scale,
         )
-        plt.scatter(
-            np.argwhere(self.grid == self.resistant_type)[:, 0],
-            np.argwhere(self.grid == self.resistant_type)[:, 1],
-            color="red",
+        sR = ax.scatter(
+            resistantLocations[:, 0],
+            resistantLocations[:, 1],
+            c="r",
+            marker="s",
+            s=scale,
         )
-        plt.xlim(0, self.domain_size)
-        plt.ylim(0, self.domain_size)
+        sN = ax.scatter(
+            normalLocations[:, 0],
+            normalLocations[:, 1],
+            c="g",
+            marker="s",
+            s=scale,
+        )
+        ax.set(xlim=(-0.5, self.domain_size + 0.5), ylim=(-0.5, self.domain_size + 0.5))
+        ax.vlines(np.linspace(0, self.domain_size - 1, self.domain_size) - 0.5, 0, self.domain_size, linewidth=0.1)
+        ax.hlines(np.linspace(0, self.domain_size - 1, self.domain_size) - 0.5, 0, self.domain_size, linewidth=0.1)
+        ax.axis("equal")
+        ax.axis("off")
         plt.show()
+
 
     def plot_celltypes_density(self, ax):
         # plot cell types density
@@ -516,21 +549,21 @@ class AMB_model:
 if __name__ == "__main__":
 
     # set up parameters
-    parameters = {"domain_size" : 10,
-    "T" : 2,
-    "S0" : 100,
+    parameters = {"domain_size" : 40,
+    "T" : 400,
+    "S0" : 200,
     "R0" : 10,
-    "N0" : 200,
+    "N0" : 300,
     "grS" : 0.028,
     "grR" : 0.023,
-    "grN" : 0.023,
+    "grN" : 0.005,
     "drS" : 0.013,
     "drR" : 0.013,
-    "drN" : 0.013,
+    "drN" : 0.00,
     "divrS" : 0.75,
-    "divrN" : 0.75,
+    "divrN" : 0.5,
     "therapy" : "adaptive",
-    "initial_condition_type" : "uniform",
+    "initial_condition_type" : "cluster_in_normal",
     "save_locations" : True,
     "dimension" : 2}
 
