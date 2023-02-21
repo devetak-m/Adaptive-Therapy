@@ -18,7 +18,7 @@ parameters = {"domain_size" : 40,
     "therapy" : "adaptive",
     "initial_condition_type" : "uniform",
     "save_locations" : False,
-    "dimension" : 0,
+    "dimension" : 2,
     "seed" : 100}
 # seed 100 has one peak, 1000 has two peaks
 model = ABM_model(parameters)
