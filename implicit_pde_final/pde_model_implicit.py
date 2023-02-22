@@ -39,11 +39,13 @@ def pde_model(parameters):
     final_arrray[0, :] = np.concatenate((initial_S, initial_R, initial_N))
 
     for i in range(number_of_time_points-1):
-            if i%10 ==0 :
-                print(f"Reached Time Step {i}")
+    #        if i%10 ==0 :
+    #            print(f"Reached Time Step {i}")
             F = construct_F(final_arrray[i,:], parameters)
 
             final_arrray[i+1,:] , error, it_count = broyden_method_good(F, final_arrray[i,:])
+            if it_count > 10:
+                print(it_count)
             # np.savetxt('final_arrray.txt', final_arrray)
 
     #adding the cut off parameter       
