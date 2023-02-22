@@ -607,9 +607,11 @@ class ABM_model:
         return arr_e
 
     # 3d Plotting 
-    def plot_cells_3d(self,index,ax=None):
+    def plot_cells_3d(self,index,ax=None,clip=False):
         self.current_grid = self.get_grid(self.location_data[index])
         sensitive_voxels = np.array(self.current_grid==self.sensitive_type).astype(bool)
+        if clip:
+            sensitive_voxels[self.domain_size//2:,:,:] = 0
         sensitive_facecolors = np.where(sensitive_voxels, '#5692CD', '#7A88CCC0')
         sensitive_edgecolors = np.where(sensitive_voxels, '#000000', '#7D84A6')
         sensitive_filled = sensitive_voxels.copy()
@@ -617,6 +619,8 @@ class ABM_model:
         sensitive_edgecolors_exp = self.explode(sensitive_edgecolors)
         sensitive_filled_exp = self.explode(sensitive_filled)
         resistant_voxels = np.array(self.current_grid==self.resistant_type).astype(bool)
+        if clip:
+            resistant_voxels[self.domain_size//2:,:,:] = 0
         resistant_facecolors = np.where(resistant_voxels, '#BF1818', '#7A88CCC0')
         resistant_edgecolors = np.where(resistant_voxels, '#000000', '#7D84A6')
         resistant_filled = resistant_voxels.copy()
@@ -624,6 +628,8 @@ class ABM_model:
         resistant_edgecolors_exp = self.explode(resistant_edgecolors)
         resistant_filled_exp = self.explode(resistant_filled)
         normal_voxels = np.array(self.current_grid==self.normal_type).astype(bool)
+        if clip:
+            normal_voxels[self.domain_size//2:,:,:] = 0
         normal_facecolors = np.where(normal_voxels, '#11A81F', '#7A88CCC0')
         normal_edgecolors = np.where(normal_voxels, '#000000', '#7D84A6')
         normal_filled = normal_voxels.copy()
@@ -646,7 +652,26 @@ class ABM_model:
         ax.axis("off")
 
 
-    def animate_cells_3d(self, interval=20, stride=1):
+    def animate_cells_3d(self, interval=20, stride=1, clip=False):
+        if np.all(self.data == 0):
+            print("No Data!")
+            return None, None, None
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        T = self.data.shape[0]
+        def update(j):
+            i = j*stride
+            if i % (T//10) == 0:
+                print("Animated up to time: " + str(i))
+            ax.clear()
+            self.plot_cells_3d(i,ax,clip=clip)
+            ax.set_title("Time: " + str(i))
+        anim = animation.FuncAnimation(
+            fig=fig, func=update, frames=self.T//stride, interval=interval
+        )
+        return fig, ax, anim
+
+    def animate_cells_graph_3d(self, interval=20, stride=1):
         if np.all(self.data == 0):
             print("No Data!")
             return None, None, None
@@ -666,7 +691,6 @@ class ABM_model:
         return fig, ax, anim
 
 
-
     def time_to_progression(self, threshold):
         # calculate inital tumor size
         initial_tumor_size = self.S0 + self.R0 + self.N0
@@ -683,13 +707,13 @@ if __name__ == "__main__":
     parameters = {"domain_size" : 10,
     "T" : 500,
     "dt" : 1,
-    "S0" : 100,
-    "R0" : 0,
+    "S0" : 200,
+    "R0" : 20,
     "N0" : 0,
-    "grS" : 0.00,
+    "grS" : 0.023,
     "grR" : 0.023,
     "grN" : 0.0,
-    "drS" : 0.01,
+    "drS" : 0.013,
     "drR" : 0.013,
     "drN" : 0.0,
     "divrS" : 0.75,
@@ -707,17 +731,18 @@ if __name__ == "__main__":
     # show grid of initial conditions
     model.run(parameters["therapy"])
     print("Model run complete.")
-    # fig,ax,anim = model.animate_cells_3d(stride=10)
-    # anim.save("media/adaptive_3d.gif",fps=100)
-    # fig.clear()
-    # run simulation
-    # model.run(parameters["therapy"])
+    ax = plt.figure().add_subplot(111, projection="3d")
+
+    fig,ax,anim = model.animate_cells_3d(stride=5,clip=True)
+    anim.save("media/adaptive_3d_clipped.gif",fps=20)
+
 
     # plot data
     fig, ax = plt.subplots(1, 1)
     ax = model.plot_celltypes_density(ax)
-    t = np.arange(1, model.T)*model.dt
-    ax.plot(t,model.S0*np.exp(-model.drS*t), label="ODE Model")
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Density")
+    # ax.plot(t,model.S0*np.exp(-model.drS*t), label="ODE Model")
     plt.show()
 
 
