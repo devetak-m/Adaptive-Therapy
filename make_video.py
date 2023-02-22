@@ -49,7 +49,7 @@ parameters_ABM_1 = {
     "divrS" : 0.75,
     "divrN" : 0.5,
     "therapy" : "adaptive",
-    "initial_condition_type" : "cluster",
+    "initial_condition_type" : "random",
     "save_locations" : True,
     "dimension" : 2,
     "seed" : 0}
@@ -74,7 +74,7 @@ parameters_ABM_2 = {
     "divrS" : 0.75,
     "divrN" : 0.5,
     "therapy" : "continuous",
-    "initial_condition_type" : "cluster",
+    "initial_condition_type" : "random",
     "save_locations" : True,
     "dimension" : 2,
     "seed" : 0}
@@ -96,7 +96,7 @@ parameters_ABM_3 = {
     "divrS" : 0.75,
     "divrN" : 0.5,
     "therapy" : "adaptive",
-    "initial_condition_type" : "cluster",
+    "initial_condition_type" : "random",
     "save_locations" : True,
     "dimension" : 2,
     "seed" : 0}

@@ -37,6 +37,7 @@ def initial_grid_square(model, initial_occupancy):
 # define a function that takes in the parameters of the model and returns the statistics of the time to progression
 # it also stores the densities trough time in a file and plots the average density of the model with error bars
 def time_to_progression(params, nruns, threshold, filename):
+    print("Running time to progression for", filename, "...")
     """ This function takes in the parameters of the model and returns the statistics of the time to progression
     it also stores the densities trough time in a file and plots the average density of the model with error bars"""
 
@@ -50,7 +51,8 @@ def time_to_progression(params, nruns, threshold, filename):
     # construct the model
     model = ABM_model(params)
     # set the initial condition
-    initial_grid_square(model, 0.9)
+    # initial_grid_square(model, 0.9)
+    # model.plot_grid()
 
     # run the model nruns times
     for i in range(nruns):
@@ -70,7 +72,7 @@ def time_to_progression(params, nruns, threshold, filename):
     # plot the total density
     plt.plot(np.arange(0, model.T), np.mean(densities_S, axis = 0) + np.mean(densities_R, axis = 0), label = "Total")
     # plot line indicating the threshold
-    plt.axhline(y = threshold * (np.sum(model.data[0,:2])), color = "black", linestyle = "--")
+    plt.axhline(y = threshold * (model.S0 + model.R0), color = "black", linestyle = "--")
     # label the plot
     plt.title("Average density of the model with error bars")
     # make error bars transparent
@@ -84,8 +86,6 @@ def time_to_progression(params, nruns, threshold, filename):
     # clear the plot
     plt.clf()
 
-
-    print(ttp)
     # normalize the time to progression
     ttp = ttp / (1/params["dt"])
 
@@ -157,7 +157,7 @@ if __name__ == "__main__":
 
     parameters_ABM = {
     "domain_size" : 40,
-    "T" : 1500,
+    "T" : 600,
     "dt" : 1,
     "S0" : 200,
     "R0" : 10,
@@ -171,16 +171,16 @@ if __name__ == "__main__":
     "divrS" : 0.75,
     "divrN" : 0.5,
     "therapy" : "continuous",
-    "initial_condition_type" : "cluster",
+    "initial_condition_type" : "random",
     "save_locations" : False,
     "dimension" : 2,
     "seed" : 0}
 
-    time_to_progression(parameters_ABM, 5, 2, "continuous")
+    time_to_progression(parameters_ABM, 10, 2, "continuous")
 
     parameters_ABM["therapy"] = "adaptive"
 
-    time_to_progression(parameters_ABM, 5, 2, "adaptive")
+    time_to_progression(parameters_ABM, 10, 2, "adaptive")
 
     parameters_ode = {
         'time_start': 0,                                  

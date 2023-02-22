@@ -554,7 +554,7 @@ class ABM_model:
 
     def time_to_progression(self, threshold):
         # calculate inital tumor size
-        initial_tumor_size = np.sum(self.data[0, :3])
+        initial_tumor_size = self.S0 + self.R0
         for i in range(self.T):
             total_number = np.sum(self.data[i, :3])
             if total_number > threshold * initial_tumor_size:
