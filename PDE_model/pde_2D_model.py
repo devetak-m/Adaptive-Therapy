@@ -293,5 +293,5 @@ if __name__ == '__main__':
         fig, func=animate, frames=np.arange(len(T)), blit=True)
 
     WriterClass = animation.writers['ffmpeg']
-    writer = animation.FFMpegFileWriter(fps=10, metadata=dict(artist='bww'), bitrate=1800)
-    ani.save('pde_2D_model.mp4', writer = writer)
+    # writer = animation.FFMpegFileWriter(fps=10, metadata=dict(artist='bww'), bitrate=1800)
+    ani.save('pde_2D_model.mp4')

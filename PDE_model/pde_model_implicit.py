@@ -38,14 +38,52 @@ def pde_model(parameters):
     final_arrray = np.zeros((number_of_time_points, 3*space_points**2))
     final_arrray[0, :] = np.concatenate((initial_S, initial_R, initial_N))
 
+
+
+    # indeces = np.indices((space_points, space_points))
+    # # make into matrix of tuples
+    # indeces = np.stack(indeces, axis=-1)
+
+
+
+
+    # left = np.roll(indeces, 1, axis=0)
+    # right = np.roll(indeces, -1, axis=0)
+    # up = np.roll(indeces, 1, axis=1)
+    # down = np.roll(indeces, -1, axis=1)
+
+    # parameters['left'] = left
+    # parameters['right'] = right
+    # parameters['up'] = up
+    # parameters['down'] = down
+
+    indices = np.linspace(0, space_points**2-1, space_points**2, dtype=int)
+
+    indices_shape = indices.reshape(space_points, space_points)
+
+    left = np.roll(indices_shape, 1, axis=0).reshape(space_points**2)
+    right = np.roll(indices_shape, -1, axis=0).reshape(space_points**2)
+    up = np.roll(indices_shape, 1, axis=1).reshape(space_points**2)
+    down = np.roll(indices_shape, -1, axis=1).reshape(space_points**2)
+
+    left = np.concatenate((left, left + space_points**2, left + 2*space_points**2)).astype(int)
+    right = np.concatenate((right, right + space_points**2, right + 2*space_points**2)).astype(int)
+    up = np.concatenate((up, up + space_points**2, up + 2*space_points**2)).astype(int)
+    down = np.concatenate((down, down + space_points**2, down + 2*space_points**2)).astype(int)
+
+    parameters['left'] = left
+    parameters['right'] = right
+    parameters['up'] = up
+    parameters['down'] = down
+
     for i in range(number_of_time_points-1):
-    #        if i%10 ==0 :
-    #            print(f"Reached Time Step {i}")
+    
+            if i%10 ==0 :
+                print(f"Reached Time Step {i}")
+            
             F = construct_F(final_arrray[i,:], parameters)
 
             final_arrray[i+1,:] , error, it_count = broyden_method_good(F, final_arrray[i,:])
-            if it_count > 10:
-                print(it_count)
             # np.savetxt('final_arrray.txt', final_arrray)
 
     #adding the cut off parameter       
@@ -74,3 +112,4 @@ def pde_3D_model_implicit(parameters):
     S, R, N, D, X, T = unpack_solution(U, parameters)
 
     return S, R, N, D, X, T
+

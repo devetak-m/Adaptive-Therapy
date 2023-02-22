@@ -45,11 +45,14 @@ async def main():
         'R0_left': 0,
         'S0_right': 0,
         'R0_right': 0,
-        'diffusion_type': 'standard'
+        'diffusion_type': 'standard',
+        #masking option - check this 
+        'cut': 'on', #can be on or off depending on cutout 
+        'cut_tolerence': 1e-2
     }
 
     S, R, N, D, X, T = pde_3D_model_implicit(parameters)
-
+    hf.draw_solution(S, R, N, D, X, T, parameters, show = True, save = True, save_name = 'implicit_3D_model', save_path = 'implicit_3D_model')
 
 parameters = {
     'time_start': 0,
