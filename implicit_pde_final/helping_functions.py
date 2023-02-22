@@ -38,13 +38,13 @@ def draw_solution(S, R, N, D, X, T, parameters, show = True, save = True, save_n
     # print(S.shape)
     # print(R.shape)
     # print(N.shape)
-    print(D)
-    print(X)
-    print(T)
+    # print(D)
+    # print(X)
+    # print(T)
 
-    print("draw_solution")
+    # print("draw_solution")
 
-    print(S)
+    # print(S)
 
 
 

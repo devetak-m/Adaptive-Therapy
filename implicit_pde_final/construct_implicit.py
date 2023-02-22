@@ -82,6 +82,7 @@ def unpack_index(k, parameters):
 def get_neighbourhood(k, space_points):
 
     return_array = np.zeros(5)
+    
     type = k // (space_points**2)
     k = k % (space_points**2)  
     return_array[0] = k + type * space_points**2
@@ -119,9 +120,9 @@ def compute_diffusion_coefficient(value, parameters):
     else:
         raise ValueError('Invalid diffusion type')
 
-def compute_scheme(parameters, density, neighbourhood):
 
-    point_value = neighbourhood[0]
+def compute_scheme(parameters, density, sum_diffusion, point_value):
+
     drug_concentration = parameters['drug_concentration']
     diffusion_coefficient = compute_diffusion_coefficient(point_value, parameters)
     maximum_tolerated_dose = parameters['maximum_tolerated_dose']
@@ -138,7 +139,7 @@ def compute_scheme(parameters, density, neighbourhood):
     effectivie_growth_rate = growth_rate * (1 - density/carrying_capacity)*(1 - 2*division_rate*(drug_concentration/maximum_tolerated_dose)) - death_rate
     effective_diffusion_coefficient = diffusion_coefficient/(space_step**2)
 
-    return effectivie_growth_rate * point_value + effective_diffusion_coefficient * (sum(neighbourhood[1:]) - 4 * point_value)
+    return effectivie_growth_rate * point_value + effective_diffusion_coefficient * (sum_diffusion)
 
 def therapy_drug_concentration(density, parameters):
 
@@ -177,6 +178,14 @@ def therapy_drug_concentration(density, parameters):
 def construct_F(U, parameters):
 
     density_grid = compute_denisity_grid(U, parameters)
+    # make density grid 1D
+    density_grid = density_grid.reshape((parameters['space_points']**2))
+    # # unpack U
+    # U = U.reshape((parameters['space_points'], parameters['space_points'], 3))
+    # # compute density grid
+    # density_grid = U[:,:,0] + U[:,:,1] + U[:,:,2]
+    # # repack U
+    # U = U.reshape((parameters['space_points']**2 * 3))
     parameters_by_type = unpack_parameters(parameters)
     time_step = parameters['time_step']
     space_points = parameters['space_points']
@@ -185,20 +194,23 @@ def construct_F(U, parameters):
     for dic in parameters_by_type:
         dic['drug_concentration'] = drug_concentration
 
+    # parameters['left'] = left
+    # parameters['right'] = right
+    # parameters['up'] = up
+    # parameters['down'] = down
+    
     def F(solution):
-
-        result = np.zeros_like(solution)
         
+        result = solution[parameters['left']] + solution[parameters['right']] + solution[parameters['up']] + solution[parameters['down']] - 4 * solution
 
         for k in range(len(solution)):
 
             time_derivative = (solution[k] - U[k]) / time_step
-
-            i, j, type = unpack_index(k, parameters)
-
-            neighbourhood_coordinates = get_neighbourhood(k, space_points)
-            neighbourhood = [solution[int(h)] for h in neighbourhood_coordinates]
-            result[k] = compute_scheme(parameters_by_type[type], density_grid[i][j], neighbourhood) - time_derivative
+            # i, j, type = unpack_index(k, parameters)
+            type = k // (space_points**2)
+            # neighbourhood_coordinates = get_neighbourhood(k, space_points)
+            # neighbourhood = [solution[int(h)] for h in neighbourhood_coordinates]
+            result[k] = compute_scheme(parameters_by_type[type], density_grid[k - type * space_points**2], result[k], solution[k]) - time_derivative
 
         return result
 

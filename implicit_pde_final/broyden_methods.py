@@ -1,8 +1,10 @@
 import numpy as np
+from numba import njit
 
 def broyden_method_sparse(F, x0, zeros, maximum_iterations = 100, tolerance = 1e-6, verbose = False):
     return None
 
+# @njit
 def broyden_method_good(F, x0, J_inverse = None, maximum_iterations = 100, tolerance = 1e-6, verbose = False):  
     # initialize
     y0 = F(x0)
