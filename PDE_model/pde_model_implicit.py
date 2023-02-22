@@ -1,9 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from initial_conditions import set_up_initial_condition
-from helping_functions import unpack_solution, draw_solution
-from broyden_methods import broyden_method_good
-from construct_implicit import construct_F
+from PDE_model.initial_conditions import set_up_initial_condition
+from PDE_model.helping_functions import unpack_solution, draw_solution
+from PDE_model.broyden_methods import broyden_method_good
+from PDE_model.construct_implicit import construct_F
 
 def pde_model(parameters):
 

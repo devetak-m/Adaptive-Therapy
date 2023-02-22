@@ -1,5 +1,5 @@
-from ABM_model import ABM_model
-from ode_model import ode_model
+from ABM.ABM_model import ABM_model
+from ODE_model.ode_model import ode_model
 import numpy as np
 import matplotlib.pyplot as plt
 

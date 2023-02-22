@@ -1,4 +1,4 @@
-from ABM_model import ABM_model
+from ABM.ABM_model import ABM_model
 import matplotlib.pyplot as plt
 import numpy as np
 parameters = {"domain_size" : 40,

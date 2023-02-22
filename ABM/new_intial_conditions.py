@@ -1,4 +1,4 @@
-from ABM_model import ABM_model
+from ABM.ABM_model import ABM_model
 import numpy as np
 
 # definine initial grid

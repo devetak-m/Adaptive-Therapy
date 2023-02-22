@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from test_parameters import *
+from scripts.test_parameters import *
 
 def therapy_drug_concentration(N, parameters):
 

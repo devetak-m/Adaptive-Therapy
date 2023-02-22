@@ -1,5 +1,5 @@
 import numpy as np
-from helping_functions import from_2D_to_1D
+from PDE_model.helping_functions import from_2D_to_1D
 
 def gaussian_cdf(x, y, extra_parameters = None):
         if extra_parameters is None:

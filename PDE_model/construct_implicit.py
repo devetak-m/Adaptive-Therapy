@@ -1,5 +1,5 @@
 import numpy as np
-from initial_conditions import *
+from PDE_model.initial_conditions import *
 import matplotlib.pyplot as plt
 
 def unpack_parameters(parameters):

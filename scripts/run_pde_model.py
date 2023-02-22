@@ -1,5 +1,6 @@
-import helping_functions as hf
-from pde_model_implicit import pde_3D_model_implicit
+from parentfolder import *
+import PDE_model.helping_functions as hf
+from PDE_model.pde_model_implicit import pde_3D_model_implicit
 import cProfile
 import pstats
 import asyncio
@@ -96,6 +97,7 @@ parameters = {
     'cut_tolerence': 1e-2
 }
 
+S, R, N, D, X, T = pde_3D_model_implicit(parameters)
 hf.draw_solution(S, R, N, D, X, T, parameters, show = True, save = True, save_name = 'implicit_3D_model', save_path = 'implicit_3D_model')
 
 print("Done")
