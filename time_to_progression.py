@@ -3,141 +3,206 @@ from ode_model import ode_model
 import numpy as np
 import matplotlib.pyplot as plt
 
-if __name__ == "__main__":
 
-    # set up parameter of test
-    test_count = 1
-    # dt in times of fraction of day
-    dt = 1/24
-    # progress threshold as factor of initial tumor size
-    threshold = 1.2
+def initial_grid_square(model, initial_occupancy):
 
-    ABM_parameters = {
+    S0 = model.S0
+    R0 = model.R0
 
-        "domain_size": 40,
-        "T": int(400 * (1/dt)),
-        "S0": 200,
-        "R0": 10,
-        "N0": 0,
-        "grS": 0.023 * dt,
-        "grR": 0.023 * dt,
-        "grN": 0,
-        "drS": 0.013 * dt,
-        "drR": 0.013 * dt,
-        "drN": 0,
-        "divrS": 0.75,
-        "divrN": 0,
-        "dimension": 2,
-        "therapy": 'adaptive',
-        "save_locations": False,
-        "initial_condition_type": "uniform"
-    }
+    # square lenght
+    L = int(np.sqrt(S0 + R0)/np.sqrt(initial_occupancy)) + 1
+
+    # create grid
+    grid = np.zeros((model.domain_size, model.domain_size))
+
+    # select S0 + R0 random locations in the center of the grid
+    # of size L x L without replacement
+    locations = np.random.choice(L**2, S0 + R0, replace=False)
+    locations = np.unravel_index(locations, (L, L))
+    locations = np.array(locations)
+    locations[0] += int((model.domain_size - L)/2)
+    locations[1] += int((model.domain_size - L)/2)
+
+    # shuffle the locations
+    np.random.shuffle(locations.T)
+    # assign the first S0 locations to S
+    grid[locations[0, :S0], locations[1, :S0]] = 1
+    # assign the next R0 locations to R
+    grid[locations[0, S0:], locations[1, S0:]] = 2
+
+    model.grid = grid.copy()
+    model.initial_grid = grid.copy()
+    return
+
+# define a function that takes in the parameters of the model and returns the statistics of the time to progression
+# it also stores the densities trough time in a file and plots the average density of the model with error bars
+def time_to_progression(params, nruns, threshold, filename):
+    print("Running time to progression for", filename, "...")
+    """ This function takes in the parameters of the model and returns the statistics of the time to progression
+    it also stores the densities trough time in a file and plots the average density of the model with error bars"""
+
+    # initialize the arrays that will store the statistics
+    ttp = np.zeros(nruns)
+
+    # initialize the arrays that will store the densities
+    densities_S = np.zeros((nruns, int(params["T"] * (1/params["dt"]))))
+    densities_R = np.zeros((nruns, int(params["T"] * (1/params["dt"]))))
+
+    # construct the model
+    model = ABM_model(params)
+    # set the initial condition
+    # initial_grid_square(model, 0.9)
+    # model.plot_grid()
+
+    # run the model nruns times
+    for i in range(nruns):
+        model.reset()
+        model.run(params["therapy"])
+        ttp[i] = model.time_to_progression(threshold)
+        densities_S[i] = model.data[:, 0]
+        densities_R[i] = model.data[:, 1]
     
-    parameters = {"domain_size" : 40,
-    "T" : 400,
-    "S0" : 200,
-    "R0" : 10,
-    "N0" : 0,
-    "grS" : 0.028,
-    "grR" : 0.023,
-    "grN" : 0.005,
-    "drS" : 0.013,
-    "drR" : 0.013,
-    "drN" : 0.00,
-    "divrS" : 0.75,
-    "divrN" : 0.5,
-    "therapy" : "adaptive",
-    "initial_condition_type" : "uniform",
-    "save_locations" : False,
-    "dimension" : 2}
-    # set up parameter of ODE model
-    ode_parameters = {
-        'time_start': 0,
-        'time_end': 1000,
-        'time_step': 0.01,
-        'tolerance': 0.0001,
-        'S0': 2,
-        'R0': 0.2,
-        'growth_rate_S': 0.028,
-        'growth_rate_R': 0.023,
-        'carrying_capacity': 10,
-        'maximum_tollerated_dose': 1,
-        'death_rate_S': 0.013,
-        'death_rate_R': 0.013,
-        'division_rate': 0.75,
-        'therapy_type': 'adaptive',
-        'current_state': 1
-    }
+    # save the densities in a file
+    np.save(filename + f"{filename}_densities_S", densities_S)
+    np.save(filename + f"{filename}_densities_R", densities_R)
 
-    # calculate time to progression for the ODE model
-    S_ode, R_ode, N_ode, T_ode, D_ode = ode_model(ode_parameters, verbose=False)
-    # calculate initial tumor size
-    initial_tumor_size = S_ode[0] + R_ode[0]
-    # calculate time to progression
-    time_to_progression_ODE = 0
-    for i in range(len(S_ode)):
-        if S_ode[i] + R_ode[i] > threshold * initial_tumor_size:
-            time_to_progression_ODE = T_ode[i]
-            break
-    
-    # calculate time to progression for the ABM model
-    model = ABM_model(ABM_parameters)
-    model.set_initial_condition(parameters["initial_condition_type"])
-    model.plot_grid()
+    # plot the average density of the model with error bars
+    plt.errorbar(np.arange(0, model.T), np.mean(densities_S, axis = 0), yerr = np.std(densities_S, axis = 0), label = "S")
+    plt.errorbar(np.arange(0, model.T), np.mean(densities_R, axis = 0), yerr = np.std(densities_R, axis = 0), label = "R")
+    # plot the total density
+    plt.plot(np.arange(0, model.T), np.mean(densities_S, axis = 0) + np.mean(densities_R, axis = 0), label = "Total")
+    # plot line indicating the threshold
+    plt.axhline(y = threshold * (model.S0 + model.R0), color = "black", linestyle = "--")
+    # label the plot
+    plt.title("Average density of the model with error bars")
+    # make error bars transparent
+    plt.gca().collections[0].set_alpha(0.2)
+    plt.gca().collections[1].set_alpha(0.2)
+    plt.legend()
+    plt.xlabel("time")
+    plt.ylabel("density")
+    # save the plot
+    plt.savefig(filename + f"_average_density" + ".png")
+    # clear the plot
+    plt.clf()
 
-    times_to_progressions = []
-    model.run(parameters["therapy"])
-    fig,ax = plt.subplots()
-    print("Plotting first simulation result")
-    model.plot_celltypes_density(ax)
-    plt.show()
+    # normalize the time to progression
+    ttp = ttp / (1/params["dt"])
 
-    for i in range(test_count):
-        if i == 5:
-            print('Halfway there!')
-        model.run(parameters["therapy"])
-        times_to_progressions.append(model.time_to_progression(threshold))
-        # reset grid
-        model.reset_grid()
+    # compute how many runs had a time to progression
+    nttp = np.sum(ttp > 0)
 
-    # calculate how many times the ABM model did not progress
-    not_progressed = times_to_progressions.count(-1)
-    # remove -1 from list
-    times_to_progressions = [x for x in times_to_progressions if x != -1]
-    
-    # if times_to_progressions is empty, set average time to progression to -1
-    if not times_to_progressions:
-        average_time_to_progression = -1
-    else:
-        average_time_to_progression = sum(times_to_progressions)/len(times_to_progressions)
-        # normalize to dt
-        average_time_to_progression = average_time_to_progression * dt
+    # compute the statistics of the time to progression
+    mean_ttp = np.mean(ttp[ttp > 0])
 
-    print('Number of tests: ', test_count)
-    print('Number of times ABM model did not progress: ', not_progressed)
-    print('Average time to progression for ABM model: ', average_time_to_progression)
-    print('Standard deviation of time to progression for ABM model: ', np.std(times_to_progressions))   
-    print('Time to progression for ODE model: ', time_to_progression_ODE)
+    # compute the standard deviation of the time to progression
+    std_ttp = np.std(ttp[ttp > 0])
 
-    # draw plot
-    data = model.data
-    S = data[1:, 0]
-    R = data[1:, 1]
-    total = S + R
-    T = np.arange(0, len(S) * dt, dt)
+    # print the statistics of the time to progression
+    print("Number of runs with time to progression: ", nttp)
+    print("Mean time to progression: ", mean_ttp)
+    print("Standard deviation of time to progression: ", std_ttp)
 
-    # plot S and R of ODE and ABM model against time
-    # plt.plot(T_ode, S_ode, label='S ODE')
-    # plt.plot(T_ode, R_ode, label='R ODE')
-    plt.plot(T, S, label='S ABM')
-    plt.plot(T, R, label='R ABM')
-    plt.plot(T, total, label='Total ABM')
-    plt.xlabel('Time')
-    plt.ylabel('Number of cells')
+    # return the statistics of the time to progression
+    return nttp, mean_ttp, std_ttp
+
+def ttp_ode(parameters, threshold):
+
+    parameters["therapy_type"] = "adaptive"
+
+    S, R, N, T, D = ode_model(parameters, verbose=False)
+
+    plt.plot(T, S, label='S')
+    plt.plot(T, R, label='R')
+    plt.plot(T, N, label='N', linestyle='--')
+    plt.plot(T, D, label='D')
     plt.legend()
     plt.show()
 
-
+    # compute the time to progression
+    ttpa = 0
+    for i in range(len(D)):
+        if S[i] + R[i] > threshold * (S[0] + R[0]):
+            ttpa = i
+            break
     
+    # print the time to progression
+    print("Time to progression with adaptive therapy: ", ttpa * parameters["time_step"])
+
+    # change the parameters to simulate the model with continous therapy
+    parameters["therapy_type"] = "continuous"
+
+    S, R, N, T, D = ode_model(parameters, verbose=False)
+
+    plt.plot(T, S, label='S')
+    plt.plot(T, R, label='R')
+    plt.plot(T, N, label='N', linestyle='--')
+    plt.plot(T, D, label='D')
+    plt.legend()
+    plt.show()
+
+    # compute the time to progression
+    ttpc = 0
+    for i in range(len(D)):
+        if S[i] + R[i] > threshold * (S[0] + R[0]):
+            ttpc = i
+            break
+    
+    # print the time to progression
+    print("Time to progression with continuous therapy: ", ttpc * parameters["time_step"])
+
+    return ttpa, ttpc
+
+if __name__ == "__main__":
+
+    parameters_ABM = {
+    "domain_size" : 40,
+    "T" : 600,
+    "dt" : 1,
+    "S0" : 200,
+    "R0" : 10,
+    "N0" : 0,
+    "grS" : 0.023,
+    "grR" : 0.023,
+    "grN" : 0.005,
+    "drS" : 0.01,
+    "drR" : 0.01,
+    "drN" : 0.00,
+    "divrS" : 0.75,
+    "divrN" : 0.5,
+    "therapy" : "continuous",
+    "initial_condition_type" : "random",
+    "save_locations" : False,
+    "dimension" : 2,
+    "seed" : 0}
+
+    time_to_progression(parameters_ABM, 10, 2, "continuous")
+
+    parameters_ABM["therapy"] = "adaptive"
+
+    time_to_progression(parameters_ABM, 10, 2, "adaptive")
+
+    parameters_ode = {
+        'time_start': 0,                                  
+        'time_end': 2000,
+        'time_step': 0.1,
+        'tolerance': 100,
+        'S0': 0.125,
+        'R0': 0.00625,
+        'growth_rate_S': 0.023,
+        'growth_rate_R': 0.023,
+        'carrying_capacity': 1,
+        'maximum_tollerated_dose': 1,
+        'death_rate_S': 0.01,
+        'death_rate_R': 0.01,
+        'division_rate': 0.75,
+        'therapy_type': 'adaptive',
+        'current_state': 1,
+    }
+
+    # ttp_ode(parameters_ode, 2)
+
+
+
 
 

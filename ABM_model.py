@@ -10,6 +10,7 @@ class ABM_model:
         self.parameters = parameters
         self.domain_size = parameters["domain_size"]
         self.T = parameters["T"]
+        self.T = int(self.T * (1/parameters["dt"]))
         self.dt = parameters["dt"]
         self.S0 = parameters["S0"]
         self.R0 = parameters["R0"]
@@ -351,7 +352,7 @@ class ABM_model:
         if therapy_type == "notherapy":
             self.current_therapy = 0
         elif therapy_type == "continuous":
-            self.current_therapy = 0
+            self.current_therapy = 1
         elif therapy_type == "adaptive":    
             n_sensitive = np.sum(self.grid == self.sensitive_type)
             n_resistant = np.sum(self.grid == self.resistant_type)
@@ -553,13 +554,12 @@ class ABM_model:
 
     def time_to_progression(self, threshold):
         # calculate inital tumor size
-        initial_tumor_size = self.S0 + self.R0 + self.N0
+        initial_tumor_size = self.S0 + self.R0
         for i in range(self.T):
             total_number = np.sum(self.data[i, :3])
             if total_number > threshold * initial_tumor_size:
                 return i
         return -1
-
 
 if __name__ == "__main__":
 

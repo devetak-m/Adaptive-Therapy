@@ -6,7 +6,7 @@ def therapy_drug_concentration(N, parameters):
 
     therapy_type = parameters['therapy_type']
     maximum_tollerated_dose = parameters['maximum_tollerated_dose']
-
+    
     if therapy_type == 'continuous':
         return maximum_tollerated_dose
     if therapy_type == 'notherapy':
