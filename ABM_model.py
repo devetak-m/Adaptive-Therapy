@@ -253,17 +253,17 @@ class ABM_model:
         for cell in cells:
             if np.random.random() < self.drS *self.dt:
                 # cell dies
-                self.grid[cell[0]][cell[1]] = 0
+                self.grid[tuple(cell)] = 0
         cells = np.argwhere(self.grid == self.resistant_type)
         for cell in cells:
             if np.random.random() < self.drR *self.dt:
                 # cell dies
-                self.grid[cell[0]][cell[1]] = 0
+                self.grid[tuple(cell)] = 0
         cells = np.argwhere(self.grid == self.normal_type)
         for cell in cells:
             if np.random.random() < self.drN *self.dt:
                 # cell dies
-                self.grid[cell[0]][cell[1]] = 0
+                self.grid[tuple(cell)] = 0
 
     # TODO make one function for all three types
     def compute_growth_S(self):
@@ -283,7 +283,7 @@ class ABM_model:
                     # check if therapy is succeful
                     if self.current_therapy and np.random.random() < self.divrS:
                         # cell dies during division
-                        self.grid[cell[0]][cell[1]] = 0
+                        self.grid[tuple(cell)] = 0
                     else:
                         # shuffle neighbours
                         np.random.shuffle(neighbours)
@@ -333,7 +333,7 @@ class ABM_model:
                 if count > 0:
                     if self.current_therapy and np.random.random() < self.divrN:
                         # cell dies during division
-                        self.grid[cell[0]][cell[1]] = 0
+                        self.grid[tuple(cell)] = 0
                     else:
                         # shuffle neighbours
                         np.random.shuffle(neighbours)
@@ -607,7 +607,7 @@ class ABM_model:
         return arr_e
 
     # 3d Plotting 
-    def plot_cells_3d(self,index,ax=plt.figure().add_subplot(111, projection="3d")):
+    def plot_cells_3d(self,index,ax=None):
         self.current_grid = self.get_grid(self.location_data[index])
         sensitive_voxels = np.array(self.current_grid==self.sensitive_type).astype(bool)
         sensitive_facecolors = np.where(sensitive_voxels, '#5692CD', '#7A88CCC0')
@@ -652,8 +652,11 @@ class ABM_model:
             return None, None, None
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
+        T = self.data.shape[0]
         def update(j):
             i = j*stride
+            if i % (T//10) == 0:
+                print("Animated up to time: " + str(i))
             ax.clear()
             self.plot_cells_3d(i,ax)
             ax.set_title("Time: " + str(i))
@@ -678,16 +681,16 @@ if __name__ == "__main__":
 
     # set up parameters
     parameters = {"domain_size" : 10,
-    "T" : 400,
+    "T" : 500,
     "dt" : 1,
-    "S0" : 50,
-    "R0" : 50,
-    "N0" : 50,
+    "S0" : 100,
+    "R0" : 0,
+    "N0" : 0,
     "grS" : 0.00,
-    "grR" : 0.01,
-    "grN" : 0.00,
-    "drS" : 0.0,
-    "drR" : 0.01,
+    "grR" : 0.023,
+    "grN" : 0.0,
+    "drS" : 0.01,
+    "drR" : 0.013,
     "drN" : 0.0,
     "divrS" : 0.75,
     "divrN" : 0.5,
@@ -703,9 +706,10 @@ if __name__ == "__main__":
     model.set_initial_condition(parameters["initial_condition_type"])
     # show grid of initial conditions
     model.run(parameters["therapy"])
-
-    fig,ax,anim = model.animate_cells_3d()
-    plt.show()
+    print("Model run complete.")
+    # fig,ax,anim = model.animate_cells_3d(stride=10)
+    # anim.save("media/adaptive_3d.gif",fps=100)
+    # fig.clear()
     # run simulation
     # model.run(parameters["therapy"])
 
@@ -713,7 +717,7 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(1, 1)
     ax = model.plot_celltypes_density(ax)
     t = np.arange(1, model.T)*model.dt
-    # ax.plot(t,model.R0*np.pi * np.exp(-model.drS*t), label="ODE Model")
+    ax.plot(t,model.S0*np.exp(-model.drS*t), label="ODE Model")
     plt.show()
 
 
