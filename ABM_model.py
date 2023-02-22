@@ -516,6 +516,19 @@ class ABM_model:
         anim = animation.FuncAnimation(fig, update, self.T - 1, interval=interval)
         return fig, ax, anim
 
+    def get_grid(self,location_indicies):
+        """Takes in location indicies and returns the grid of cell types"""
+        if self.dimension ==2:
+            self.grid = np.zeros((self.domain_size, self.domain_size))
+            for location in location_indicies:
+                self.grid[location[0],location[1]] = location[2]
+        elif self.dimension ==3:
+            self.grid = np.zeros((self.domain_size, self.domain_size, self.domain_size))
+            for location in location_indicies:
+                location = location.astype(int)
+                self.grid[location[0],location[1],location[2]] = location[3]
+        return self.grid
+    
     def animate_cells_graph(self, interval=20, stride=1):
         fig, ax = plt.subplots(1, 2)
         fig.set_size_inches(10, 7)
@@ -587,36 +600,36 @@ class ABM_model:
         )
         return fig, ax, anim
 
+    def explode(self,arr):
+        size = np.array(arr.shape)*2
+        arr_e = np.zeros(size - 1, dtype=arr.dtype)
+        arr_e[::2, ::2, ::2] = arr
+        return arr_e
+
     # 3d Plotting 
-    def plot_cells_3d(self):
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection="3d")
-        def explode(arr):
-            size = np.array(arr.shape)*2
-            arr_e = np.zeros(size - 1, dtype=arr.dtype)
-            arr_e[::2, ::2, ::2] = arr
-            return arr_e
-        sensitive_voxels = np.array(self.grid==self.sensitive_type).astype(bool)
+    def plot_cells_3d(self,index,ax=plt.figure().add_subplot(111, projection="3d")):
+        self.current_grid = self.get_grid(self.location_data[index])
+        sensitive_voxels = np.array(self.current_grid==self.sensitive_type).astype(bool)
         sensitive_facecolors = np.where(sensitive_voxels, '#5692CD', '#7A88CCC0')
         sensitive_edgecolors = np.where(sensitive_voxels, '#000000', '#7D84A6')
         sensitive_filled = sensitive_voxels.copy()
-        sensitive_facecolors_exp = explode(sensitive_facecolors)
-        sensitive_edgecolors_exp = explode(sensitive_edgecolors)
-        sensitive_filled_exp = explode(sensitive_filled)
-        resistant_voxels = np.array(self.grid==self.resistant_type).astype(bool)
+        sensitive_facecolors_exp = self.explode(sensitive_facecolors)
+        sensitive_edgecolors_exp = self.explode(sensitive_edgecolors)
+        sensitive_filled_exp = self.explode(sensitive_filled)
+        resistant_voxels = np.array(self.current_grid==self.resistant_type).astype(bool)
         resistant_facecolors = np.where(resistant_voxels, '#BF1818', '#7A88CCC0')
         resistant_edgecolors = np.where(resistant_voxels, '#000000', '#7D84A6')
         resistant_filled = resistant_voxels.copy()
-        resistant_facecolors_exp = explode(resistant_facecolors)
-        resistant_edgecolors_exp = explode(resistant_edgecolors)
-        resistant_filled_exp = explode(resistant_filled)
-        normal_voxels = np.array(self.grid==self.normal_type).astype(bool)
+        resistant_facecolors_exp = self.explode(resistant_facecolors)
+        resistant_edgecolors_exp = self.explode(resistant_edgecolors)
+        resistant_filled_exp = self.explode(resistant_filled)
+        normal_voxels = np.array(self.current_grid==self.normal_type).astype(bool)
         normal_facecolors = np.where(normal_voxels, '#11A81F', '#7A88CCC0')
         normal_edgecolors = np.where(normal_voxels, '#000000', '#7D84A6')
         normal_filled = normal_voxels.copy()
-        normal_facecolors_exp = explode(normal_facecolors)
-        normal_edgecolors_exp = explode(normal_edgecolors)
-        normal_filled_exp = explode(normal_filled)
+        normal_facecolors_exp = self.explode(normal_facecolors)
+        normal_edgecolors_exp = self.explode(normal_edgecolors)
+        normal_filled_exp = self.explode(normal_filled)
 
         # generate mesh
         x, y, z = np.indices(np.array(sensitive_filled_exp.shape) + 1).astype(float) // 2
@@ -631,13 +644,25 @@ class ABM_model:
         ax.voxels(x,y,z,normal_filled_exp, facecolors=normal_facecolors_exp, edgecolors=normal_edgecolors_exp)
         ax.set(xlim=(0, self.domain_size), ylim=(0, self.domain_size), zlim=(0, self.domain_size))  
         ax.axis("off")
-        plt.show()
-
-
 
 
     def animate_cells_3d(self, interval=20, stride=1):
-        pass
+        if np.all(self.data == 0):
+            print("No Data!")
+            return None, None, None
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection="3d")
+        def update(j):
+            i = j*stride
+            ax.clear()
+            self.plot_cells_3d(i,ax)
+            ax.set_title("Time: " + str(i))
+        anim = animation.FuncAnimation(
+            fig=fig, func=update, frames=self.T//stride, interval=interval
+        )
+        return fig, ax, anim
+
+
 
     def time_to_progression(self, threshold):
         # calculate inital tumor size
@@ -659,10 +684,10 @@ if __name__ == "__main__":
     "R0" : 50,
     "N0" : 50,
     "grS" : 0.00,
-    "grR" : 0.00,
+    "grR" : 0.01,
     "grN" : 0.00,
     "drS" : 0.0,
-    "drR" : 0.0,
+    "drR" : 0.01,
     "drN" : 0.0,
     "divrS" : 0.75,
     "divrN" : 0.5,
@@ -677,8 +702,10 @@ if __name__ == "__main__":
     # set up initial condition
     model.set_initial_condition(parameters["initial_condition_type"])
     # show grid of initial conditions
-    # model.plot_grid()
-    model.plot_cells_3d()
+    model.run(parameters["therapy"])
+
+    fig,ax,anim = model.animate_cells_3d()
+    plt.show()
     # run simulation
     # model.run(parameters["therapy"])
 
@@ -689,41 +716,4 @@ if __name__ == "__main__":
     # ax.plot(t,model.R0*np.pi * np.exp(-model.drS*t), label="ODE Model")
     plt.show()
 
-    # if model.save_locations:
-    #     fig, ax, anim = model.animate_cells_graph(stride=10,interval=80)
-    #     anim.save("media/nice_abm.mp4")
 
-    # animate data
-    # fig,ax = plt.subplots()
-    # fig,ax,anim = model.animate_cells((fig,ax))
-    # anim.save("test_ABM.mp4")
-
-    # animate graph
-    # fig,ax = plt.subplots()
-    # fig,ax,anim = model.animate_graph((fig,ax))
-    # anim.save("test_ABM_graph.mp4")
-
-    # plt.show()
-    # anim.save("both_working.mp4")
-
-    # # do a parameter sweep
-    # therapies = ['notherapy', 'continuous', 'adaptive']
-    # initial_conditions_types = ['random', 'cluster', 'two_clusters']
-    # S0s = [50, 100, 200]
-    # for initial_condition_type in initial_conditions_types:
-    #     for S0 in S0s:
-    #             # set up model
-    #         model = ABM_model(N, T, S0, R0, grS, grR, drS, drR, divrS)
-    #             # set up initial condition
-    #         model.set_initial_condition(initial_condition_type)
-    #             # show grid of initial conditions
-    #             # model.print_grid()
-    #             # run simulation
-    #         model.run(therapy)
-    #             # # plot data
-    #         fig, ax = plt.subplots(1, 1)
-    #         ax = model.plot_celltypes_density(ax)
-    #         ax.set_title('Therapy: {}, Initial condition: {}, S0: {}'.format(therapy, initial_condition_type, S0))
-    #             # # save figure
-    #         fig.savefig('elene_{}_{}_{}.png'.format(therapy, initial_condition_type, S0))
-    #         plt.close(fig)
