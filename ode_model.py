@@ -159,20 +159,21 @@ if __name__ == "__main__":
 
     parameters = {
         'time_start': 0,                                  
-        'time_end': 2000,
-        'time_step': 0.1,
+        'time_end': 600,
+        'time_step': 1,
         'tolerance': 100,
-        'S0': 1,
-        'R0': 0.1,
-        'growth_rate_S': 0.04,
-        'growth_rate_R': 0.04,
-        'carrying_capacity': 4.9,
+        'S0': 0.9,
+        'R0': 0.01,
+        'growth_rate_S': 0.027,
+        'growth_rate_R': 0.03,
+        'carrying_capacity': 4,
         'maximum_tollerated_dose': 1,
-        'death_rate_S': 0.03,
-        'death_rate_R': 0.03,
-        'division_rate': 0.03,
+        'death_rate_S': 0.013,
+        'death_rate_R': 0.013,
+        'division_rate': 0.75,
         'therapy_type': 'adaptive',
-        'current_state': 1,
+        'current_state': 0,
+        'adaptive_therapy_ratio': 0.5,
     }
 
     test_parameters(parameters)

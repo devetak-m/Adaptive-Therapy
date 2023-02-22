@@ -45,7 +45,7 @@ parameters = {
     'diffusion_type': 'standard',
 
     #masking option - check this 
-    'cut': 'on', #can be on or off depending on cutout 
+    'cut': 'off', #can be on or off depending on cutout 
     'cut_tolerence': 1e-2
 }
 
