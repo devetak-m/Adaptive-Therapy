@@ -3,3 +3,4 @@ __pycache__/
 media/
 .vscode/
 test_voxel_animation.py
+venv
