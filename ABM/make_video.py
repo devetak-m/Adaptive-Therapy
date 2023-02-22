@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 from matplotlib import animation
 import numpy as np
-from ABM_model import *
+from ABM.ABM_model import *
 
 def initial_grid_square(model, initial_occupancy):
 
@@ -130,42 +130,42 @@ plt.show()
 
 # animate cells and graph for each model
 fig, ax, anim = model1.animate_cells_graph(stride=10,interval=80)
-anim.save("media/adaptive_1.mp4")
+anim.save("../media/adaptive_1.mp4")
 
 fig, ax, anim = model2.animate_cells_graph(stride=10,interval=80)
-anim.save("media/continuous_1.mp4")
+anim.save("../media/continuous_1.mp4")
 
 fig, ax, anim = model3.animate_cells_graph(stride=10,interval=80)
-anim.save("media/adaptive_2.mp4")
+anim.save("../media/adaptive_2.mp4")
 
 fig, ax = plt.subplots()
 fig, ax, anim = model1.animate_cells((fig, ax))
-anim.save("media/adaptive_1.mp4")
+anim.save("../media/adaptive_1.mp4")
 
 fig, ax = plt.subplots()
 fig, ax, anim = model2.animate_cells((fig, ax))
-anim.save("media/continuous_1.mp4")
+anim.save("../media/continuous_1.mp4")
 
 fig, ax = plt.subplots()
 fig, ax, anim = model3.animate_cells((fig, ax))
-anim.save("media/adaptive_2.mp4")
+anim.save("../media/adaptive_2.mp4")
 
 fig, ax = plt.subplots()
 fig, ax, anim = model1.animate_graph((fig, ax))
-anim.save("media/adaptive_1.mp4")
+anim.save("../media/adaptive_1.mp4")
 
 fig, ax = plt.subplots()
 fig, ax, anim = model2.animate_graph((fig, ax))
-anim.save("media/continuous_1.mp4")
+anim.save("../media/continuous_1.mp4")
 
 fig, ax = plt.subplots()
 fig, ax, anim = model3.animate_graph((fig, ax))
-anim.save("media/adaptive_2.mp4")
+anim.save("../media/adaptive_2.mp4")
 
 
 
 # fig, ax, anim = model.animate_cells_graph(stride=10,interval=80)
-# anim.save("media/nice_abm.mp4")
+# anim.save("../media/nice_abm.mp4")
 
 #     fig,ax = plt.subplots()
 #     fig,ax,anim = model.animate_cells((fig,ax))
@@ -201,7 +201,7 @@ anim.save("media/adaptive_2.mp4")
 
 # if model.save_locations:
 #     fig, ax, anim = model.animate_cells_graph(stride=10,interval=80)
-#     anim.save("media/nice_abm.mp4")
+#     anim.save("../media/nice_abm.mp4")
 
     # animate data
     # fig,ax = plt.subplots()
