@@ -55,7 +55,7 @@ class ABM_model:
                 initial_location_data, normal_location_data, axis=0
             )
             self.location_data.append(initial_location_data)
-    def load_parameters(self,paramters):
+    def load_parameters(self,parameters):
         self.domain_size = parameters["domain_size"]
         self.T = parameters["T"]
         self.dt = parameters["dt"]
