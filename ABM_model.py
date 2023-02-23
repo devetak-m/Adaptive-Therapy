@@ -461,7 +461,7 @@ class ABM_model:
         if therapy_type == "notherapy":
             self.current_therapy = 0
         elif therapy_type == "continuous":
-            self.current_therapy = 0
+            self.current_therapy = 1
         elif therapy_type == "adaptive":
             n_sensitive = np.sum(self.grid == self.sensitive_type)
             n_resistant = np.sum(self.grid == self.resistant_type)
@@ -623,7 +623,8 @@ class ABM_model:
         (lineD,) = ax[0].plot(np.arange(1, j), self.data[1:j, 3] * 100, label="Therapy")
         ax[0].set_xlabel("Time")
         ax[0].set_ylabel("Density")
-        ax[0].set(xlim=(0, self.T))
+        total_max = np.max(np.sum(self.data[:,0:3],axis=1))
+        ax[0].set(xlim=(0, self.T),ylim=(0,total_max))
         ax[0].legend()
 
         nFrames = self.T - 1
