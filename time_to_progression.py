@@ -2,7 +2,7 @@ from ABM_model import ABM_model
 from ode_model import ode_model
 import numpy as np
 import matplotlib.pyplot as plt
-
+import os 
 
 def initial_grid_square(model, initial_occupancy):
 
@@ -45,8 +45,8 @@ def time_to_progression(params, nruns, threshold, filename):
     ttp = np.zeros(nruns)
 
     # initialize the arrays that will store the densities
-    densities_S = np.zeros((nruns, int(params["T"] * (1/params["dt"]))))
-    densities_R = np.zeros((nruns, int(params["T"] * (1/params["dt"]))))
+    densities_S = np.zeros((nruns, int(params["T"])))
+    densities_R = np.zeros((nruns, int(params["T"])))
 
     # construct the model
     model = ABM_model(params)
@@ -63,28 +63,34 @@ def time_to_progression(params, nruns, threshold, filename):
         densities_R[i] = model.data[:, 1]
     
     # save the densities in a file
-    np.save(filename + f"{filename}_densities_S", densities_S)
-    np.save(filename + f"{filename}_densities_R", densities_R)
+    np.save(f"{filename}/densities_S.npy", densities_S)
+    np.save(f"{filename}/densities_R.npy", densities_R)
 
     # plot the average density of the model with error bars
-    plt.errorbar(np.arange(0, model.T), np.mean(densities_S, axis = 0), yerr = np.std(densities_S, axis = 0), label = "S")
-    plt.errorbar(np.arange(0, model.T), np.mean(densities_R, axis = 0), yerr = np.std(densities_R, axis = 0), label = "R")
+    fig,ax = plt.subplots()
+    ax.errorbar(np.arange(0, model.T), np.mean(densities_S, axis = 0), yerr = np.std(densities_S, axis = 0), label = "S")
+    ax.errorbar(np.arange(0, model.T), np.mean(densities_R, axis = 0), yerr = np.std(densities_R, axis = 0), label = "R")
     # plot the total density
-    plt.plot(np.arange(0, model.T), np.mean(densities_S, axis = 0) + np.mean(densities_R, axis = 0), label = "Total")
+    ax.plot(np.arange(0, model.T), np.mean(densities_S, axis = 0) + np.mean(densities_R, axis = 0), label = "Total")
     # plot line indicating the threshold
-    plt.axhline(y = threshold * (model.S0 + model.R0), color = "black", linestyle = "--")
+    ax.axhline(y = threshold * (model.S0 + model.R0), color = "black", linestyle = "--")
     # label the plot
-    plt.title("Average density of the model with error bars")
+    ax.set(title="Average density of the model with error bars")
     # make error bars transparent
-    plt.gca().collections[0].set_alpha(0.2)
-    plt.gca().collections[1].set_alpha(0.2)
-    plt.legend()
-    plt.xlabel("time")
-    plt.ylabel("density")
+    ax.collections[0].set_alpha(0.2)
+    ax.collections[1].set_alpha(0.2)
+    ax.legend()
+    ax.set(xlabel="time",ylabel="density")
     # save the plot
-    plt.savefig(filename + f"_average_density" + ".png")
+    plt.savefig(f"{filename}/average_density" + ".png")
     # clear the plot
     plt.clf()
+
+    # save initial condition
+    fig,ax = plt.subplots()
+    ax.imshow(model.initial_grid, cmap = model.get_cmap(),vmin=0,vmax=2)
+    ax.axis("off")
+    plt.savefig(f"{filename}/initial_condition.png")
 
     # normalize the time to progression
     ttp = ttp / (1/params["dt"])
