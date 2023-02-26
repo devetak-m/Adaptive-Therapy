@@ -4,6 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from PIL import Image
+from matplotlib.colors import ListedColormap
 # plt.style.use('ggplot')
 
 class ABM_model:
@@ -295,6 +296,8 @@ class ABM_model:
                 print("Sensitive cells: ", np.sum(self.grid == self.sensitive_type))
         
         elif "/" in initial_condition_type:
+            if self.R0 != 0 or self.S0 != 0:
+                raise ValueError("Please set R0 and S0 to 0 for image initial conditions")
             try:
                 self.image = Image.open(initial_condition_type)
             except FileNotFoundError:
@@ -310,6 +313,10 @@ class ABM_model:
             TOL = 200
             self.grid = np.where(np.linalg.norm(self.resized_image-self.sensitive_color[np.newaxis, np.newaxis, :],axis=2)<TOL, self.sensitive_type, 0)
             self.grid = np.where(np.linalg.norm(self.resized_image-self.resistant_color[np.newaxis, np.newaxis, :],axis=2)<TOL, self.resistant_type, self.grid)
+            self.S0 = np.sum(self.grid == self.sensitive_type)
+            self.R0 = np.sum(self.grid == self.resistant_type)
+            print("S0", self.S0)
+            print("R0", self.R0)
             # plt.imshow(self.grid,cmap="summer")
             # plt.show()
 
@@ -326,7 +333,7 @@ class ABM_model:
             except FileExistsError:
                 raise ValueError("Folder already exists")
         for t in range(1, self.T):
-            if t % 50 == 0:
+            if t % 10 == 0:
                 print("t = ", t, " of ", self.T, "")
             self.set_therapy(therapy_type, t)
             self.compute_death()
@@ -571,19 +578,33 @@ class ABM_model:
             s=scale,
         )
         ax.set(xlim=(-0.5, self.domain_size + 0.5), ylim=(-0.5, self.domain_size + 0.5))
-        ax.vlines(
-            np.linspace(0, self.domain_size - 1, self.domain_size) - 0.5,
-            0,
-            self.domain_size,
-            linewidth=0.1,
-        )
-        ax.hlines(
-            np.linspace(0, self.domain_size - 1, self.domain_size) - 0.5,
-            0,
-            self.domain_size,
-            linewidth=0.1,
-        )
+        # ax.vlines(
+        #     np.linspace(0, self.domain_size - 1, self.domain_size) - 0.5,
+        #     0,
+        #     self.domain_size,
+        #     linewidth=0.1,
+        # )
+        # ax.hlines(
+        #     np.linspace(0, self.domain_size - 1, self.domain_size) - 0.5,
+        #     0,
+        #     self.domain_size,
+        #     linewidth=0.1,
+        # )
         ax.axis("equal")
+        ax.axis("off")
+        plt.show()
+    def get_cmap(self):
+        # define the colormap
+        self.no_cell_color = np.array([0,0,0])
+        # /300 somehow looks better
+        self.sensitive_color = np.array([56,182,255])/350
+        self.resistant_color = np.array([255,49,49])/350
+        cmap = ListedColormap([self.no_cell_color,self.sensitive_color,self.resistant_color])
+        return cmap
+
+    def plot_grid2(self,ax):
+        cmap = self.get_cmap()
+        plt.imshow(self.grid,cmap)
         ax.axis("off")
         plt.show()
 
@@ -782,14 +803,15 @@ class ABM_model:
         )
         ax = [ax0, ax1]
         return fig, ax, anim
-
+    
+    
+    # 3d Plotting
     def explode(self, arr):
         size = np.array(arr.shape) * 2
         arr_e = np.zeros(size - 1, dtype=arr.dtype)
         arr_e[::2, ::2, ::2] = arr
         return arr_e
 
-    # 3d Plotting
     def plot_cells_3d(self, index, ax=None, clip=False):
         self.current_grid = self.get_grid(self.location_data[index])
         sensitive_voxels = np.array(self.current_grid == self.sensitive_type).astype(
@@ -900,11 +922,11 @@ if __name__ == "__main__":
 
     # set up parameters
     parameters = {
-        "domain_size": 100,
-        "T": 300,
+        "domain_size": 1000,
+        "T": 100,
         "dt": 1,
-        "S0": 700,
-        "R0": 50,
+        "S0": 0,
+        "R0": 0,
         "N0": 0,
         "grS": 0.023,
         "grR": 0.023,
@@ -925,7 +947,7 @@ if __name__ == "__main__":
     model = ABM_model(parameters,True)
     # plot grid of initial conditinons for 2d
     fig, ax = plt.subplots(1, 1)
-    model.plot_grid(ax)
+    model.plot_grid2(ax)
     plt.show()
 
     # show grid of initial conditions
@@ -934,8 +956,8 @@ if __name__ == "__main__":
     # model.plot_cells_3d(0, ax,clip=True)
 
     # run model
-    # model.run(parameters["therapy"])
-    # print("Model run complete.")
+    model.run(parameters["therapy"])
+    print("Model run complete.")
 
     # fig,ax,anim = model.animate_cells_3d(stride=2,clip=True)
     # anim.save("media/large_adaptive_3d_clipped2.mp4",fps=30)
