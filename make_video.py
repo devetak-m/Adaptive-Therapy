@@ -49,7 +49,7 @@ parameters_ABM_1 = {
     "divrS" : 0.75,
     "divrN" : 0.5,
     "therapy" : "adaptive",
-    "initial_condition_type" : "random",
+    "initial_condition_type" : "initial_conditions/resistant_core.png",
     "save_locations" : True,
     "dimension" : 2,
     "seed" : 0}

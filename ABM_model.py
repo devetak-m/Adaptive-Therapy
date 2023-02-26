@@ -3,6 +3,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from PIL import Image
 # plt.style.use('ggplot')
 
 class ABM_model:
@@ -251,6 +252,7 @@ class ABM_model:
                 self.grid[tuple(self.location_indices[i, :])] = self.resistant_type
             for i in range(self.S0 + self.R0, self.N_total):
                 self.grid[tuple(self.location_indices[i, :])] = self.normal_type
+
         elif initial_condition_type == "cluster_3d":
             # make a ball of the total  number of cells
             N_cells = self.S0 + self.R0 + self.N0
@@ -291,6 +293,26 @@ class ABM_model:
                 print("Remaining cells: ", np.sum(self.grid !=0))
                 print("Resistant cells: ", np.sum(self.grid == self.resistant_type))
                 print("Sensitive cells: ", np.sum(self.grid == self.sensitive_type))
+        
+        elif "/" in initial_condition_type:
+            try:
+                self.image = Image.open(initial_condition_type)
+            except FileNotFoundError:
+                raise ValueError("Please enter a valid image path for initial_condition_type")
+            if np.array(self.image).shape[0] != np.array(self.image).shape[1]:
+                raise ValueError("Please enter a square image")
+            resize = self.image.resize((self.domain_size, self.domain_size))
+            self.resized_image = np.array(resize)[:,:,:3]
+            # hard to interpret colors as they are spectrum 
+            self.sensitive_color = np.array([56,182,255])
+            self.resistant_color = np.array([255,49,49])
+            self.no_cell_color = [0,0,0]
+            TOL = 200
+            self.grid = np.where(np.linalg.norm(self.resized_image-self.sensitive_color[np.newaxis, np.newaxis, :],axis=2)<TOL, self.sensitive_type, 0)
+            self.grid = np.where(np.linalg.norm(self.resized_image-self.resistant_color[np.newaxis, np.newaxis, :],axis=2)<TOL, self.resistant_type, self.grid)
+            # plt.imshow(self.grid,cmap="summer")
+            # plt.show()
+
         else:
             raise ValueError("Invalid initial condition type")
         # save initial grid
@@ -878,7 +900,7 @@ if __name__ == "__main__":
 
     # set up parameters
     parameters = {
-        "domain_size": 40,
+        "domain_size": 100,
         "T": 300,
         "dt": 1,
         "S0": 700,
@@ -893,7 +915,7 @@ if __name__ == "__main__":
         "divrS": 0.75,
         "divrN": 0.5,
         "therapy": "adaptive",
-        "initial_condition_type": "resistant_core",
+        "initial_condition_type": "initial_conditions/two_resistant_cores.png",
         "save_locations": True,
         "dimension": 2,
         "seed": 4,
