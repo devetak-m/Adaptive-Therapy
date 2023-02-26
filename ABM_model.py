@@ -332,8 +332,8 @@ class ABM_model:
                 os.mkdir(self.foldername)
             except FileExistsError:
                 raise ValueError("Folder already exists")
-        for t in range(1, self.T):
-            if t % 10 == 0:
+        for t in range(0, self.T):
+            if t % 10 == 0 and self.verbose:
                 print("t = ", t, " of ", self.T, "")
             self.set_therapy(therapy_type, t)
             self.compute_death()
@@ -375,6 +375,9 @@ class ABM_model:
                         print("Saving results")
                         filename = self.foldername + f"/location_data_{t}.npy"
                         np.save(filename, current_location_data)
+                        np.save(self.foldername + "/data.npy", self.data[:t])
+                    if t == self.T-1:
+                        np.save(self.foldername + "/data.npy", self.data)
 
     def load_locations(self, foldername):
         # load location data from file
@@ -388,7 +391,15 @@ class ABM_model:
         # self.location_data = [None for i in range(max_time)]
         for filename,time in zip(filenames,times):
             self.location_data.append(np.load(foldername + "/" + filename))
-        print("Loaded data successfully!")
+        print("Loaction data loaded successfully!")
+        # TODO this is dodgy! The times will now be wrong
+        self.dt = self.dt * self.save_frequency
+        self.T = len(self.location_data)
+        try:    
+            self.data = np.load(foldername + "/data.npy")
+            print("Loaded data successfully!")
+        except FileNotFoundError:
+            print("No data file found")
     
     def compute_death(self):
         # compute death of cells
@@ -611,52 +622,50 @@ class ABM_model:
     def plot_celltypes_density(self, ax):
         # plot cell types density
         total = self.N0+self.S0+self.R0
-        ax.plot(np.arange(1, self.T) * self.dt, self.data[1:, 0], label="S")
-        ax.plot(np.arange(1, self.T) * self.dt, self.data[1:, 1], label="R")
-        ax.plot(np.arange(1, self.T) * self.dt, self.data[1:, 2], label="N")
-        ax.plot(np.arange(1, self.T) * self.dt, self.data[1:, 3] *total/2 , label="Therapy")
-        ax.plot(np.arange(1, self.T) * self.dt, self.data[1:, 0]+self.data[1:,1], label="R+S",linestyle='--',color='black')
+        t = np.linspace(1,self.T,self.data.shape[0]-1)*self.dt
+        ax.plot(t, self.data[1:, 0], label="S")
+        ax.plot(t, self.data[1:, 1], label="R")
+        ax.plot(t, self.data[1:, 2], label="N")
+        ax.plot(t, self.data[1:, 3] *total/2 , label="Therapy")
+        ax.plot(t, self.data[1:, 0]+self.data[1:,1], label="R+S",linestyle='--',color='black')
         ax.set_xlabel("Time")
         ax.set_ylabel("Density")
         ax.legend()
         return ax
 
-    def animate_cells(self, figax):
+    def animate_cells(self, figax, stride=1):
         if np.all(self.data == 0):
             print("No Data!")
             return None, None, None
         fig, ax = figax
-        nFrames = self.T - 1
-        sensitiveLocations = self.location_data[1][self.location_data[1][:, 2] == 1, :2]
-        resistantLocations = self.location_data[1][self.location_data[1][:, 2] == 2, :2]
-        scale = 60000 / self.domain_size
-        sS = ax.scatter(
-            sensitiveLocations[:, 0],
-            sensitiveLocations[:, 1],
-            c="b",
-            marker="s",
-            s=scale,
-        )
-        sR = ax.scatter(
-            resistantLocations[:, 0],
-            resistantLocations[:, 1],
-            c="r",
-            marker="s",
-            s=scale,
-        )
-        ax.set(xlim=(-0.5, self.domain_size + 0.5), ylim=(-0.5, self.domain_size + 0.5))
+        nFrames = (self.T - 1)//stride
+        sensitiveLocations = self.location_data[1][self.location_data[1][:, 2] == 1, :2].astype(int)
+        resistantLocations = self.location_data[1][self.location_data[1][:, 2] == 2, :2].astype(int)
+        self.current_grid = np.zeros((self.domain_size, self.domain_size))
+        self.current_grid[sensitiveLocations[:, 0], sensitiveLocations[:, 1]] = 1
+        self.current_grid[resistantLocations[:, 0], resistantLocations[:, 1]] = 2
+        cmap = self.get_cmap()
+        ax.imshow(self.current_grid, cmap=cmap)
         ax.axis("equal")
         ax.axis("off")
 
-        def update(i):
+        def update(j):
+            i = j*stride
+            if i%10==0:
+                print("Frame: ",i," of ",nFrames*stride,"")
+            ax.clear()
+            ax.axis("off")
+            ax.axis("equal")
             sensitiveLocations = self.location_data[i + 1][
                 self.location_data[i + 1][:, 2] == 1, :2
-            ]
+            ].astype(int)
             resistantLocations = self.location_data[i + 1][
                 self.location_data[i + 1][:, 2] == 2, :2
-            ]
-            sS.set_offsets(sensitiveLocations)
-            sR.set_offsets(resistantLocations)
+            ].astype(int)
+            self.current_grid = np.zeros((self.domain_size, self.domain_size))
+            self.current_grid[sensitiveLocations[:, 0], sensitiveLocations[:, 1]] = 1
+            self.current_grid[resistantLocations[:, 0], resistantLocations[:, 1]] = 2
+            ax.imshow(self.current_grid, cmap=cmap)
 
         anim = animation.FuncAnimation(
             fig=fig, func=update, frames=nFrames, interval=20
@@ -729,7 +738,7 @@ class ABM_model:
                 self.location_data[1][:, 2] == self.normal_type, :2
             ]
             scale = 20000 / self.domain_size**self.dimension
-            # scale = 10
+            # scale = 100
             sS = ax1.scatter(
                 sensitiveLocations[:, 0],
                 sensitiveLocations[:, 1],
@@ -923,8 +932,8 @@ if __name__ == "__main__":
     # set up parameters
     parameters = {
         "domain_size": 1000,
-        "T": 100,
-        "dt": 1,
+        "T": 1000,
+        "dt": 10,    
         "S0": 0,
         "R0": 0,
         "N0": 0,
@@ -941,14 +950,16 @@ if __name__ == "__main__":
         "save_locations": True,
         "dimension": 2,
         "seed": 4,
+        "foldername": "data/new_adaptive_data",
+        "save_frequency": 100,
     }
 
     # set up model
     model = ABM_model(parameters,True)
     # plot grid of initial conditinons for 2d
-    fig, ax = plt.subplots(1, 1)
-    model.plot_grid2(ax)
-    plt.show()
+    # fig, ax = plt.subplots(1, 1)
+    # model.plot_grid2(ax)
+    # plt.show()
 
     # show grid of initial conditions
     # fig = plt.figure()
@@ -956,9 +967,18 @@ if __name__ == "__main__":
     # model.plot_cells_3d(0, ax,clip=True)
 
     # run model
-    model.run(parameters["therapy"])
-    print("Model run complete.")
+    # model.run(parameters["therapy"])
+    # print("Model run complete.")
 
+    # load data
+    model.load_locations("data/new_adaptive_data")
+    print("Loading complete")
+    fig,ax = plt.subplots(1,1)
+    model.plot_celltypes_density(ax)
+    plt.show()
+    fig,ax = plt.subplots(1,1)
+    fig,ax,anim = model.animate_cells([fig,ax],stride=1)
+    anim.save("media/new_animate_test.mp4",fps=10)
     # fig,ax,anim = model.animate_cells_3d(stride=2,clip=True)
     # anim.save("media/large_adaptive_3d_clipped2.mp4",fps=30)
 
