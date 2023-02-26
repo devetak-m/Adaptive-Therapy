@@ -34,11 +34,11 @@ def initial_grid_square(model, initial_occupancy):
 
 parameters_ABM_1 = {
 
-    "domain_size" : 40,
-    "T" : 600,
+    "domain_size" : 300,
+    "T" : 2000,
     "dt" : 1,
-    "S0" : 200,
-    "R0" : 10,
+    "S0" : 10000,
+    "R0" : 5,
     "N0" : 0,
     "grS" : 0.023,
     "grR" : 0.023,
@@ -112,101 +112,103 @@ model1.set_initial_condition(parameters_ABM_1["initial_condition_type"])
 model2.set_initial_condition(parameters_ABM_2["initial_condition_type"])
 model3.set_initial_condition(parameters_ABM_3["initial_condition_type"])
 
-initial_grid_square(model1, 0.85)
+initial_grid_square(model1, 0.99)
+model1.plot_grid()
+
 initial_grid_square(model2, 0.85)
 initial_grid_square(model3, 0.7)
 
 # run simulation
 model1.run(parameters_ABM_1["therapy"])
-model2.run(parameters_ABM_2["therapy"])
-model3.run(parameters_ABM_3["therapy"])
+# model2.run(parameters_ABM_2["therapy"])
+# model3.run(parameters_ABM_3["therapy"])
 
-# plot data on separate plots
+# # plot data on separate plots
 fig, ax = plt.subplots(1, 3, figsize=(15, 5))
 ax[0] = model1.plot_celltypes_density(ax[0])
-ax[1] = model2.plot_celltypes_density(ax[1])
-ax[2] = model3.plot_celltypes_density(ax[2])
+# ax[1] = model2.plot_celltypes_density(ax[1])
+# ax[2] = model3.plot_celltypes_density(ax[2])
 plt.show()
 
-# animate cells and graph for each model
+# # animate cells and graph for each model
 fig, ax, anim = model1.animate_cells_graph(stride=10,interval=80)
-anim.save("media/adaptive_1.mp4")
+anim.save("media/adaptive_really_big2.mp4")
 
-fig, ax, anim = model2.animate_cells_graph(stride=10,interval=80)
-anim.save("media/continuous_1.mp4")
+# fig, ax, anim = model2.animate_cells_graph(stride=10,interval=80)
+# anim.save("media/continuous_1.mp4")
 
-fig, ax, anim = model3.animate_cells_graph(stride=10,interval=80)
-anim.save("media/adaptive_2.mp4")
-
-
-#     fig,ax = plt.subplots()
-#     fig,ax,anim = model.animate_cells((fig,ax))
-#     anim.save("test_ABM.mp4")
-
-#     fig,ax = plt.subplots()
-#     fig,ax,anim = model.animate_graph((fig,ax))
-#     anim.save("test_ABM_graph.mp4")
-
-#     plt.show()
-#     anim.save("both_working.mp4")
+# fig, ax, anim = model3.animate_cells_graph(stride=10,interval=80)
+# anim.save("media/adaptive_2.mp4")
 
 
+# #     fig,ax = plt.subplots()
+# #     fig,ax,anim = model.animate_cells((fig,ax))
+# #     anim.save("test_ABM.mp4")
+
+# #     fig,ax = plt.subplots()
+# #     fig,ax,anim = model.animate_graph((fig,ax))
+# #     anim.save("test_ABM_graph.mp4")
+
+# #     plt.show()
+# #     anim.save("both_working.mp4")
 
 
 
 
-# model = ABM_model(parameters_ABM)
-#     # set up initial condition
-# model.set_initial_condition(parameters_ABM["initial_condition_type"])
-# initial_grid_square(model, 0.8)
-#     # show grid of initial conditions
-# model.plot_grid()
-#     # run simulation
-# model.run(parameters_ABM["therapy"])
 
-#     # plot data
-# fig, ax = plt.subplots(1, 1)
-# ax = model.plot_celltypes_density(ax)
-# t = np.arange(1, model.T)*model.dt
-# # ax.plot(t,model.R0*np.pi * np.exp(-model.drS*t), label="ODE Model")
-# plt.show()
 
-# if model.save_locations:
-#     fig, ax, anim = model.animate_cells_graph(stride=10,interval=80)
-#     anim.save("media/nice_abm.mp4")
+# # model = ABM_model(parameters_ABM)
+# #     # set up initial condition
+# # model.set_initial_condition(parameters_ABM["initial_condition_type"])
+# # initial_grid_square(model, 0.8)
+# #     # show grid of initial conditions
+# # model.plot_grid()
+# #     # run simulation
+# # model.run(parameters_ABM["therapy"])
 
-    # animate data
-    # fig,ax = plt.subplots()
-    # fig,ax,anim = model.animate_cells((fig,ax))
-    # anim.save("test_ABM.mp4")
+# #     # plot data
+# # fig, ax = plt.subplots(1, 1)
+# # ax = model.plot_celltypes_density(ax)
+# # t = np.arange(1, model.T)*model.dt
+# # # ax.plot(t,model.R0*np.pi * np.exp(-model.drS*t), label="ODE Model")
+# # plt.show()
 
-    # animate graph
-    # fig,ax = plt.subplots()
-    # fig,ax,anim = model.animate_graph((fig,ax))
-    # anim.save("test_ABM_graph.mp4")
+# # if model.save_locations:
+# #     fig, ax, anim = model.animate_cells_graph(stride=10,interval=80)
+# #     anim.save("media/nice_abm.mp4")
 
-    # plt.show()
-    # anim.save("both_working.mp4")
+#     # animate data
+#     # fig,ax = plt.subplots()
+#     # fig,ax,anim = model.animate_cells((fig,ax))
+#     # anim.save("test_ABM.mp4")
 
-    # # do a parameter sweep
-    # therapies = ['notherapy', 'continuous', 'adaptive']
-    # initial_conditions_types = ['random', 'cluster', 'two_clusters']
-    # S0s = [50, 100, 200]
-    # for initial_condition_type in initial_conditions_types:
-    #     for S0 in S0s:
-    #             # set up model
-    #         model = ABM_model(N, T, S0, R0, grS, grR, drS, drR, divrS)
-    #             # set up initial condition
-    #         model.set_initial_condition(initial_condition_type)
-    #             # show grid of initial conditions
-    #             # model.print_grid()
-    #             # run simulation
-    #         model.run(therapy)
-    #             # # plot data
-    #         fig, ax = plt.subplots(1, 1)
-    #         ax = model.plot_celltypes_density(ax)
-    #         ax.set_title('Therapy: {}, Initial condition: {}, S0: {}'.format(therapy, initial_condition_type, S0))
-    #             # # save figure
-    #         fig.savefig('elene_{}_{}_{}.png'.format(therapy, initial_condition_type, S0))
-    #         plt.close(fig)
+#     # animate graph
+#     # fig,ax = plt.subplots()
+#     # fig,ax,anim = model.animate_graph((fig,ax))
+#     # anim.save("test_ABM_graph.mp4")
+
+#     # plt.show()
+#     # anim.save("both_working.mp4")
+
+#     # # do a parameter sweep
+#     # therapies = ['notherapy', 'continuous', 'adaptive']
+#     # initial_conditions_types = ['random', 'cluster', 'two_clusters']
+#     # S0s = [50, 100, 200]
+#     # for initial_condition_type in initial_conditions_types:
+#     #     for S0 in S0s:
+#     #             # set up model
+#     #         model = ABM_model(N, T, S0, R0, grS, grR, drS, drR, divrS)
+#     #             # set up initial condition
+#     #         model.set_initial_condition(initial_condition_type)
+#     #             # show grid of initial conditions
+#     #             # model.print_grid()
+#     #             # run simulation
+#     #         model.run(therapy)
+#     #             # # plot data
+#     #         fig, ax = plt.subplots(1, 1)
+#     #         ax = model.plot_celltypes_density(ax)
+#     #         ax.set_title('Therapy: {}, Initial condition: {}, S0: {}'.format(therapy, initial_condition_type, S0))
+#     #             # # save figure
+#     #         fig.savefig('elene_{}_{}_{}.png'.format(therapy, initial_condition_type, S0))
+#     #         plt.close(fig)
 
