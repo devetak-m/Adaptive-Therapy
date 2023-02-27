@@ -14,7 +14,7 @@ def run_ABM(parameters, i, theshold):
     density_S = model.data[:, 0]
     density_R = model.data[:, 1]
     # compute the time to progression
-    ttp = 0
+    ttp = parameters["T"]
     for j in range(model.T):
         if density_S[j] + density_R[j] > theshold * (parameters['S0'] + parameters['R0']):
             ttp = j
@@ -26,7 +26,7 @@ def run_ABM(parameters, i, theshold):
 def comparison_ABM(parameters, nruns, theshold, filename = None):
 
     if filename is None:
-        filename = f"comparison_ABM_{parameters['therapy']}_inital_condition_{parameters['initial_condition_type']}"
+        filename = f"comparison_ABM_{parameters['therapy']}_initial_condition_{parameters['initial_condition_type']}"
 
     print("Running time to progression for", filename, "...")
 
@@ -102,34 +102,34 @@ if __name__ == "__main__":
         "seed" : 0}
     
     # NUMBER OF RUNS
-    nruns = 2
+    nruns = 10
 
     # define parameters to compare
-    inital_condition_types = ["resistant_core"]
+    initial_condition_types  = ["resistant_core"]
     therapies = ["continuous", "adaptive", "notherapy"]
 
     # define the threshold
     theshold = 1.5
 
     # time to progression for the different combinations of parameters
-    ttp = np.zeros((len(inital_condition_types), len(therapies)))
+    ttp = np.zeros((len(initial_condition_types), len(therapies)))
     # standard deviation of the time to progression for the different combinations of parameters
-    std = np.zeros((len(inital_condition_types), len(therapies)))
+    std = np.zeros((len(initial_condition_types), len(therapies)))
 
     # run the model for all the combinations of parameters
-    for initial_condition_type in inital_condition_types:
+    for initial_condition_type in initial_condition_types:
         for therapy in therapies:
             parameters_ABM["initial_condition_type"] = initial_condition_type
             parameters_ABM["therapy"] = therapy
             mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold)
-            ttp[inital_condition_types.index(initial_condition_type), therapies.index(therapy)] = mean
-            std[inital_condition_types.index(initial_condition_type), therapies.index(therapy)] = std_r
+            ttp[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = mean
+            std[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = std_r
     
     # store the results in a file
     import pandas as pd 
-    df = pd.DataFrame(np.append([ttp,std]), columns=np.append([inital_condition_types], [therapies]), index=["ttp", "std"])
-    df.to_csv(f"results_ABM/comparison_ABM.csv")
-    np.savez(f"results_ABM/comparison_ABM.npz", ttp=ttp, std=std, inital_condition_types=inital_condition_types, therapies=therapies)
-
+    df = pd.DataFrame(ttp,index=initial_condition_types,columns=therapies)
+    df.to_csv(f"results_ABM/comparison_means.csv")
+    df = pd.DataFrame(std,index=initial_condition_types,columns=therapies)
+    df.to_csv(f"results_ABM/comparison_std.csv")
 
 

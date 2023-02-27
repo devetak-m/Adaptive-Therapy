@@ -53,7 +53,7 @@ for ic in initial_conditions:
 
 # fig,ax = plt.subplots()
 # model.plot_celltypes_density(ax)
-# plt.show()
+# plt.show(
 # fig,ax = plt.subplots()
 # fig,ax,anim = model.animate_cells([fig,ax],stride=1)
 # anim.save(f"{path}/cells.mp4",fps=10)
