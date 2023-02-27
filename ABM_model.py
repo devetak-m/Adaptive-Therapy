@@ -17,7 +17,7 @@ class ABM_model:
         self.data = np.zeros((self.T, 4))
         self.current_therapy = 1
         self.seed = parameters["seed"]
-        print(f"Using seed {self.seed}")
+        # print(f"Using seed {self.seed}")
         np.random.seed(self.seed)
         # cell types 1 = sensitive, 2 = resistant, 3 = normal
         self.sensitive_type = 1
@@ -78,7 +78,7 @@ class ABM_model:
         try:
             self.foldername = parameters["foldername"]
         except KeyError:
-            print("No foldername given, using default foldername None")
+            # print("No foldername given, using default foldername None")
             self.foldername = None
         try:
             self.save_frequency = parameters["save_frequency"]
@@ -247,7 +247,7 @@ class ABM_model:
                                 self.grid[i, j] = self.sensitive_type
                 N_generated = np.sum(self.grid == self.sensitive_type)
                 radius += 0.1 
-                print("Increased radius by", 0.1*iter)
+                # print("Increased radius by", 0.1*iter)
                 iter +=1
             # randomly kill surplus cells so there are exactly N_cells cells using np.random.choice
             cell_locations = np.argwhere(self.grid == self.sensitive_type)
@@ -363,7 +363,7 @@ class ABM_model:
                                 self.grid[i, j, k] = self.sensitive_type
                 N_generated = np.sum(self.grid == self.sensitive_type)
                 radius += 0.1 
-                print("Increased radius by", 0.1*iter)
+                # print("Increased radius by", 0.1*iter)
                 iter +=1
             # randomly kill surplus cells so there are exactly N_cells cells using np.random.choice
             N_generated = np.sum(self.grid == self.sensitive_type)
@@ -428,8 +428,8 @@ class ABM_model:
                 raise ValueError("Folder already exists")
         start = time.perf_counter()
         for t in range(0, self.T):
-            if t % 10 == 0 and self.verbose:
-                print("t = ", t, " of ", self.T, "")
+            # if t % 10 == 0 and self.verbose:
+            #     print("t = ", t, " of ", self.T, "")
                 elapsed = time.perf_counter()-start
                 if t>0:
                     print("Expected time remaining: ", np.round(elapsed*(self.T-t)/(60*t),1), " minutes")
