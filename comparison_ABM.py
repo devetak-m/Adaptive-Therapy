@@ -59,8 +59,10 @@ def comparison_ABM(parameters, nruns, theshold, filename = None):
     plt.errorbar(np.arange(parameters["T"]), np.mean(densities_R, axis=0), yerr=np.std(densities_R, axis=0), label="R")
     # plot total density
     plt.plot(np.arange(parameters["T"]), np.mean(densities_S, axis=0) + np.mean(densities_R, axis=0), label="Total")
-    # plot the threshold
-    plt.plot(np.arange(parameters["T"]), theshold * (parameters["S0"] + parameters["R0"]) * np.ones(parameters["T"]), label="Threshold")
+    # plot the threshold with a dashed line and transparency
+    plt.axhline(y=theshold * (parameters['S0'] + parameters['R0']), color='r', linestyle='--', label="Threshold")
+    plt.gca().collections[0].set_alpha(0.2)
+    plt.gca().collections[1].set_alpha(0.2)
     plt.title("Average densities of S and R")
     plt.xlabel("Time")
     plt.ylabel("Density")
@@ -104,7 +106,7 @@ if __name__ == "__main__":
     therapies = ["continuous", "adaptive", "notherapy"]
 
     # define the threshold
-    theshold = 2
+    theshold = 1.5
 
     # run the model for all the combinations of parameters
     for initial_condition_type in inital_condition_types:
