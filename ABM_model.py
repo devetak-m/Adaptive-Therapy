@@ -17,13 +17,13 @@ class ABM_model:
         self.data = np.zeros((self.T, 4))
         self.current_therapy = 1
         self.seed = parameters["seed"]
-        # print(f"Using seed {self.seed}")
         np.random.seed(self.seed)
         # cell types 1 = sensitive, 2 = resistant, 3 = normal
         self.sensitive_type = 1
         self.resistant_type = 2
         self.normal_type = 3
-        # print(f"Starting with {self.S0} sensitive cells, {self.R0} resistant cells and {self.N0} normal cells.")
+        if self.verbose:
+            print(f"Starting with {self.S0} sensitive cells, {self.R0} resistant cells and {self.N0} normal cells.")
 
         # set initial condition and store data
         self.set_initial_condition(parameters["initial_condition_type"])
@@ -153,7 +153,6 @@ class ABM_model:
 
         
         if initial_condition_type == "multiple_resistant_cores" or initial_condition_type == "multiple_resistant_rims":
-            print("Multiple resistant cores or rims initial condition")
             if self.N0 > 0:
                 raise ValueError("N0 must be 0 for resistant_core initial condition")
             try: 
@@ -165,9 +164,8 @@ class ABM_model:
                 raise ValueError("fill_factor must be between 0 and 1")
             try:
                 core_locations = self.parameters["core_locations"]
-                print("Loaded core locations")
             except KeyError:
-                print("No core locations given, using default core locations [[],[]]")
+                # print("No core locations given, using default core locations [[],[]]")
                 core_locations = np.array([[domain_size//5,domain_size//5],[4*domain_size//5,4*domain_size//5]])
             
             if (self.S0 + self.R0) // len(core_locations) != (self.S0 + self.R0) / len(core_locations):
@@ -189,7 +187,8 @@ class ABM_model:
                                     self.grid[i, j] = self.cell_here
                     N_generated = np.sum(self.grid == self.cell_here)
                     radius += 0.1 
-                    print("Increased radius by", 0.1*iter)
+                    if self.verbose:
+                        print("Increased radius by", 0.1*iter)
                     iter +=1
                 # randomly kill surplus cells so there are exactly N_cells cells using np.random.choice
                 cell_locations = np.argwhere(self.grid == self.cell_here)
@@ -231,7 +230,8 @@ class ABM_model:
             try: 
                 fill_factor = self.parameters["fill_factor"]
             except KeyError:
-                print("No fill factor given, using default fill factor 1")
+                if self.verbose:
+                    print("No fill factor given, using default fill factor 1")
                 fill_factor = 1
             if fill_factor>1 or fill_factor<=0:
                 raise ValueError("fill_factor must be between 0 and 1")
@@ -247,7 +247,8 @@ class ABM_model:
                                 self.grid[i, j] = self.sensitive_type
                 N_generated = np.sum(self.grid == self.sensitive_type)
                 radius += 0.1 
-                # print("Increased radius by", 0.1*iter)
+                if self.verbose:
+                    print("Increased radius by", 0.1*iter)
                 iter +=1
             # randomly kill surplus cells so there are exactly N_cells cells using np.random.choice
             cell_locations = np.argwhere(self.grid == self.sensitive_type)
@@ -352,7 +353,6 @@ class ABM_model:
             # make a ball of the total  number of cells
             N_cells = self.S0 + self.R0 + self.N0
             radius = (3*N_cells /(4 * np.pi) )** (1 / 3)
-            print(f"radius is {radius}")
             N_generated = 0
             iter = 0
             while N_generated < N_cells:
@@ -409,8 +409,8 @@ class ABM_model:
             self.grid = np.where(np.linalg.norm(self.resized_image-self.resistant_color[np.newaxis, np.newaxis, :],axis=2)<TOL, self.resistant_type, self.grid)
             self.S0 = np.sum(self.grid == self.sensitive_type)
             self.R0 = np.sum(self.grid == self.resistant_type)
-            print("S0", self.S0)
-            print("R0", self.R0)
+            # print("S0", self.S0)
+            # print("R0", self.R0)
             # plt.imshow(self.grid,cmap="summer")
             # plt.show()
 
@@ -428,8 +428,8 @@ class ABM_model:
                 raise ValueError("Folder already exists")
         start = time.perf_counter()
         for t in range(0, self.T):
-            # if t % 10 == 0 and self.verbose:
-            #     print("t = ", t, " of ", self.T, "")
+            if t % 10 == 0 and self.verbose:
+                print("t = ", t, " of ", self.T, "")
                 elapsed = time.perf_counter()-start
                 if t>0:
                     print("Expected time remaining: ", np.round(elapsed*(self.T-t)/(60*t),1), " minutes")
@@ -470,7 +470,8 @@ class ABM_model:
                 self.location_data.append(current_location_data)
                 if self.foldername != None:
                     if int(t%self.save_frequency) == 0:
-                        print("Saving results")
+                        if self.verbose:
+                            print("Saving results")
                         filename = self.foldername + f"/location_data_{t}.npy"
                         np.save(filename, current_location_data)
                         np.save(self.foldername + "/data.npy", self.data[:t])
@@ -882,7 +883,8 @@ class ABM_model:
         # ax1.set(xlim=(70,130),ylim=(70,130))
         def update(j):
             i = j * stride
-            print("Updating frame", i, "of", nFrames)
+            if self.verbose:
+                print("Updating frame", i, "of", nFrames)
             lineS.set_data(np.arange(1, i), self.data[1:i, 0])
             lineR.set_data(np.arange(1, i), self.data[1:i, 1])
             lineN.set_data(np.arange(1, i), self.data[1:i, 2])
@@ -1047,7 +1049,7 @@ if __name__ == "__main__":
         "divrN": 0.5,
         "therapy": "adaptive",
         "initial_condition_type": "multiple_resistant_rims",
-        "fill_factor": 1.0,
+        "fill_factor": 0.8,
         "core_locations": np.array([[domain_size//3,domain_size//3],[2*domain_size//3,2*domain_size//3],[1*domain_size//3,2*domain_size//3],[2*domain_size//3,1*domain_size//3]]),
         "save_locations": True,
         "dimension": 2,
@@ -1057,7 +1059,7 @@ if __name__ == "__main__":
     }
 
     # set up model
-    model = ABM_model(parameters,True)
+    model = ABM_model(parameters,False)
     # plot grid of initial conditinons for 2d
     fig, ax = plt.subplots(1, 1)
     model.plot_grid2(ax)
