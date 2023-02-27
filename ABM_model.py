@@ -153,6 +153,7 @@ class ABM_model:
 
         
         if initial_condition_type == "multiple_resistant_cores" or initial_condition_type == "multiple_resistant_rims":
+            print("Multiple resistant cores or rims initial condition")
             if self.N0 > 0:
                 raise ValueError("N0 must be 0 for resistant_core initial condition")
             try: 
@@ -162,55 +163,50 @@ class ABM_model:
                 fill_factor = 1
             if fill_factor>1 or fill_factor<=0:
                 raise ValueError("fill_factor must be between 0 and 1")
-            if (self.S0 + self.R0) // len(core_locations) != (self.S0 + self.R0) / len(core_locations):
-                raise ValueError("Number of cells must be divisible by number of cores")
             try:
                 core_locations = self.parameters["core_locations"]
+                print("Loaded core locations")
             except KeyError:
                 print("No core locations given, using default core locations [[],[]]")
                 core_locations = np.array([[domain_size//5,domain_size//5],[4*domain_size//5,4*domain_size//5]])
+            
             if (self.S0 + self.R0) // len(core_locations) != (self.S0 + self.R0) / len(core_locations):
                 raise ValueError("Number of cells must be divisible by number of cores")
-            for core_location in core_locations:
+            if (self.S0 + self.R0) // len(core_locations) != (self.S0 + self.R0) / len(core_locations):
+                raise ValueError("Number of cells must be divisible by number of cores")
+            self.cell_here = -1
+            for i,core_location in enumerate(core_locations):
                 corex,corey = core_location
                 # make a ball of the total  number of cells
-                N_cells = (self.S0 + self.R0) // len(core_locations)
-                if self.N0 > 0:
-                    raise ValueError("N0 must be 0 for resistant_core initial condition")
-                try: 
-                    fill_factor = self.parameters["fill_factor"]
-                except KeyError:
-                    print("No fill factor given, using default fill factor 1")
-                    fill_factor = 1
-                if fill_factor>1 or fill_factor<=0:
-                    raise ValueError("fill_factor must be between 0 and 1")
-                N_cells = self.S0 + self.R0 
+                N_cells = (self.S0 + self.R0) // core_locations.shape[0]
                 radius = (N_cells /(fill_factor*np.pi) )** (1 / 2)
                 N_generated = 0
                 iter = 0
                 while N_generated < N_cells:
                     for i in range(self.domain_size):
                         for j in range(self.domain_size):
-                                if (i - self.domain_size / 2) ** 2 +(j - self.domain_size / 2)** 2 < radius**2:
-                                    self.grid[i, j] = self.sensitive_type
-                    N_generated = np.sum(self.grid == self.sensitive_type)
+                                if (i - corex) ** 2 +(j - corey)** 2 < radius**2:
+                                    self.grid[i, j] = self.cell_here
+                    N_generated = np.sum(self.grid == self.cell_here)
                     radius += 0.1 
                     print("Increased radius by", 0.1*iter)
                     iter +=1
                 # randomly kill surplus cells so there are exactly N_cells cells using np.random.choice
-                cell_locations = np.argwhere(self.grid == self.sensitive_type)
+                cell_locations = np.argwhere(self.grid == self.cell_here)
                 kill_surplus = np.random.choice(cell_locations.shape[0], N_generated - N_cells, replace=False)
                 self.grid[cell_locations[kill_surplus,0],cell_locations[kill_surplus,1]] = 0
-                cell_locations = np.argwhere(self.grid == self.sensitive_type)
+                cell_locations = np.argwhere(self.grid == self.cell_here)
                 # sort the cells by distance from the center
-                cell_locations_center = cell_locations - self.domain_size / 2
+                cell_locations_center = cell_locations - core_location[np.newaxis,:]
                 distances = np.linalg.norm(cell_locations_center, axis=1)
                 sorted_indices = np.argsort(distances)
                 cell_locations = cell_locations[sorted_indices]
                 
                 if "resistant_core" in initial_condition_type:
+                    # set all cell_here to sensitive before overwriting
+                    self.grid[self.grid == self.cell_here] = self.sensitive_type
                     # set the closest R0 of the cluster to be resistant 
-                    for i in range(self.R0):
+                    for i in range(self.R0 // core_locations.shape[0]):
                         self.grid[tuple(cell_locations[i])] = self.resistant_type
                     if self.verbose:
                         print("Generated cells: ", N_generated)
@@ -218,8 +214,9 @@ class ABM_model:
                         print("Resistant cells: ", np.sum(self.grid == self.resistant_type))
                         print("Sensitive cells: ", np.sum(self.grid == self.sensitive_type))
                 elif "resistant_rim" in initial_condition_type:
+                    self.grid[self.grid == self.cell_here] = self.sensitive_type
                     # set the R0 cells on the rim to be resistant
-                    for i in range(self.R0):
+                    for i in range(self.R0//core_locations.shape[0]):
                         self.grid[tuple(cell_locations[-i])] = self.resistant_type
                     if self.verbose:
                         print("Generated cells: ", N_generated)
@@ -227,7 +224,7 @@ class ABM_model:
                         print("Resistant cells: ", np.sum(self.grid == self.resistant_type))
                         print("Sensitive cells: ", np.sum(self.grid == self.sensitive_type))
 
-        if initial_condition_type == "resistant_core" or initial_condition_type == "resistant_rim":
+        elif initial_condition_type == "resistant_core" or initial_condition_type == "resistant_rim":
             # make a ball of the total  number of cells
             if self.N0 > 0:
                 raise ValueError("N0 must be 0 for resistant_core initial condition")
@@ -705,6 +702,7 @@ class ABM_model:
         ax.axis("equal")
         ax.axis("off")
         plt.show()
+ 
     def get_cmap(self):
         # define the colormap
         self.no_cell_color = np.array([0,0,0])
@@ -716,7 +714,7 @@ class ABM_model:
 
     def plot_grid2(self,ax):
         cmap = self.get_cmap()
-        plt.imshow(self.grid,cmap)
+        plt.imshow(self.grid,cmap,vmin=0,vmax=2)
         ax.axis("off")
         plt.show()
 
@@ -1048,9 +1046,9 @@ if __name__ == "__main__":
         "divrS": 0.75,
         "divrN": 0.5,
         "therapy": "adaptive",
-        "initial_condition_type": "resistant_core",
-        "fill_factor": 0.4,
-        # "core_locations": np.array([[domain_size//5,domain_size//5],[4*domain_size//5,4*domain_size//5]]),
+        "initial_condition_type": "multiple_resistant_rims",
+        "fill_factor": 1.0,
+        "core_locations": np.array([[domain_size//3,domain_size//3],[2*domain_size//3,2*domain_size//3],[1*domain_size//3,2*domain_size//3],[2*domain_size//3,1*domain_size//3]]),
         "save_locations": True,
         "dimension": 2,
         "seed": 4,
@@ -1064,6 +1062,11 @@ if __name__ == "__main__":
     fig, ax = plt.subplots(1, 1)
     model.plot_grid2(ax)
     plt.show()
+    S0 = model.data[0, 0]
+    R0 = model.data[0, 1]
+    print(f"S0: {S0}")
+    print(f"R0: {R0}")
+
 
     # show grid of initial conditions
     # fig = plt.figure()
