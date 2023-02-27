@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import multiprocessing as mp
 from ABM_model import ABM_model
-
+import pickle
 def run_ABM(parameters, i, theshold):
     # set the seed
     parameters['seed'] = i
@@ -24,7 +24,6 @@ def run_ABM(parameters, i, theshold):
 
 
 def comparison_ABM(parameters, nruns, theshold, filename = None):
-
     if filename is None:
         filename = f"comparison_ABM_{parameters['therapy']}_initial_condition_{parameters['initial_condition_type']}"
 
@@ -80,12 +79,13 @@ if __name__ == "__main__":
     print("Starting the simulation...")
 
     # define the parameters of the model
+    domain_size = 400
     parameters_ABM = {
-        "domain_size" : 40,
+        "domain_size" : domain_size,
         "T" : 600,
         "dt" : 1,
-        "S0" : 200,
-        "R0" : 10,
+        "S0" : 8000,
+        "R0" : 800,
         "N0" : 0,
         "grS" : 0.023,
         "grR" : 0.023,
@@ -96,16 +96,17 @@ if __name__ == "__main__":
         "divrS" : 0.75,
         "divrN" : 0.5,
         "therapy" : "continuous",
-        "initial_condition_type" : "resistant_core",
+        "initial_condition_type" : "uniform",
+        "fill_factor":0.8,
+        "core_locations": np.array([[domain_size//4,domain_size//4],[3*domain_size//4,3*domain_size//4]]),
         "save_locations" : False,
         "dimension" : 2,
-        "seed" : 0}
-    
+        "seed" : 1}
     # NUMBER OF RUNS
     nruns = 10
 
     # define parameters to compare
-    initial_condition_types  = ["resistant_core"]
+    initial_condition_types  = ["resistant_core","resistant_rim","multiple_resistant_cores","multiple_resistant_rims"]
     therapies = ["continuous", "adaptive", "notherapy"]
 
     # define the threshold
@@ -121,10 +122,31 @@ if __name__ == "__main__":
         for therapy in therapies:
             parameters_ABM["initial_condition_type"] = initial_condition_type
             parameters_ABM["therapy"] = therapy
-            mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold)
-            ttp[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = mean
-            std[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = std_r
+            model = ABM_model(parameters_ABM)
+            fig,ax = plt.subplots()  
+            ax = model.plot_grid2(ax)
+            plt.savefig(f"results_ABM/{initial_condition_type}.png")
+            # mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold)
+            # ttp[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = mean
+            # std[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = std_r
     
+    # uniform tests
+    for therapy in therapies:
+        parameters_ABM["initial_condition_type"] = initial_condition_type
+        parameters_ABM["therapy"] = therapy
+        model = ABM_model(parameters_ABM)
+        fig,ax = plt.subplots()  
+        ax = model.plot_grid2(ax)
+        plt.savefig(f"results_ABM/{initial_condition_type}.png")
+        mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold)
+        ttp[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = mean
+        std[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = std_r
+    # mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold)
+    # ttp[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = mean
+    # std[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = std_r
+
+
+
     # store the results in a file
     import pandas as pd 
     df = pd.DataFrame(ttp,index=initial_condition_types,columns=therapies)

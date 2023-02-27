@@ -223,7 +223,7 @@ class ABM_model:
                         print("Resistant cells: ", np.sum(self.grid == self.resistant_type))
                         print("Sensitive cells: ", np.sum(self.grid == self.sensitive_type))
 
-        elif initial_condition_type == "resistant_core" or initial_condition_type == "resistant_rim":
+        elif initial_condition_type == "resistant_core" or initial_condition_type == "resistant_rim" or initial_condition_type == "uniform_ball":
             # make a ball of the total  number of cells
             if self.N0 > 0:
                 raise ValueError("N0 must be 0 for resistant_core initial condition")
@@ -255,7 +255,11 @@ class ABM_model:
             kill_surplus = np.random.choice(cell_locations.shape[0], N_generated - N_cells, replace=False)
             self.grid[cell_locations[kill_surplus,0],cell_locations[kill_surplus,1]] = 0
             cell_locations = np.argwhere(self.grid == self.sensitive_type)
-            # sort the cells by distance from the center
+            if self.verbose:
+                print(f"Correcly killed : {np.sum(self.grid == self.sensitive_type) == N_cells}")
+
+
+            # # sort the cells by distance from the center
             cell_locations_center = cell_locations - self.domain_size / 2
             distances = np.linalg.norm(cell_locations_center, axis=1)
             sorted_indices = np.argsort(distances)
@@ -265,21 +269,21 @@ class ABM_model:
                 # set the closest R0 of the cluster to be resistant 
                 for i in range(self.R0):
                     self.grid[tuple(cell_locations[i])] = self.resistant_type
-                if self.verbose:
-                    print("Generated cells: ", N_generated)
-                    print("Remaining cells: ", np.sum(self.grid !=0))
-                    print("Resistant cells: ", np.sum(self.grid == self.resistant_type))
-                    print("Sensitive cells: ", np.sum(self.grid == self.sensitive_type))
             elif "resistant_rim" in initial_condition_type:
                 # set the R0 cells on the rim to be resistant
                 for i in range(self.R0):
                     self.grid[tuple(cell_locations[-i])] = self.resistant_type
-                if self.verbose:
-                    print("Generated cells: ", N_generated)
-                    print("Remaining cells: ", np.sum(self.grid !=0))
-                    print("Resistant cells: ", np.sum(self.grid == self.resistant_type))
-                    print("Sensitive cells: ", np.sum(self.grid == self.sensitive_type))
+            elif "uniform_ball" in initial_condition_type:
+                # set random cells to be resistant
+                resistant_indices = np.random.choice(cell_locations.shape[0], self.R0, replace=False)
+                for index in resistant_indices:
+                    self.grid[tuple(cell_locations[index])] = self.resistant_type
 
+            if self.verbose:
+                print("Generated cells: ", N_generated)
+                print("Remaining cells: ", np.sum(self.grid !=0))
+                print("Resistant cells: ", np.sum(self.grid == self.resistant_type))
+                print("Sensitive cells: ", np.sum(self.grid == self.sensitive_type))
 
         elif initial_condition_type == "cluster_in_normal":
 
@@ -322,11 +326,11 @@ class ABM_model:
                 )
             ]
             for i in range(self.S0):
-                self.grid[self.location_indices[i, :]] = self.sensitive_type
+                self.grid[tuple(self.location_indices[i, :])] = self.sensitive_type
             for i in range(self.S0, self.S0 + self.R0):
-                self.grid[self.location_indices[i, :]] = self.resistant_type
-            for i in range(self.S0 + self.R0, self.N_total):
-                self.grid[self.location_indices[i, :]] = self.normal_type
+                self.grid[tuple(self.location_indices[i, :])] = self.resistant_type
+            # for i in range(self.S0 + self.R0, self.N_total):
+            #     self.grid[self.location_indices[i, :]] = self.normal_type
 
         elif initial_condition_type == "uniform_3d":
             # uniformly distribution S0 + R0 + N0 cells using numpy
@@ -418,7 +422,7 @@ class ABM_model:
             raise ValueError("Invalid initial condition type")
         # save initial grid
         self.initial_grid = self.grid.copy()
-
+    
     def run(self, therapy_type):
         # run model for T iterations
         if self.foldername:
@@ -717,7 +721,7 @@ class ABM_model:
         cmap = self.get_cmap()
         plt.imshow(self.grid,cmap,vmin=0,vmax=2)
         ax.axis("off")
-        plt.show()
+        return ax
 
     def plot_celltypes_density(self, ax):
         # plot cell types density
