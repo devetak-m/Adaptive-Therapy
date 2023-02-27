@@ -4,14 +4,14 @@ from ABM_model import ABM_model
 import matplotlib.pyplot as plt
 default_parameters = {
         "domain_size": 1000,
-        "T": 100,
+        "T": 10000,
         "dt": 1,    
         "S0": 0,
         "R0": 0,
         "N0": 0,
         "grS": 0.023,
         "grR": 0.023,
-        "grN": 0.0,
+        "grN": 0.0, 
         "drS": 0.013,
         "drR": 0.013,
         "drN": 0.0,
@@ -23,25 +23,27 @@ default_parameters = {
         "dimension": 2,
         "seed": 4,
         "foldername": None,
-        "save_frequency": 10,
+        "save_frequency": 1000,
     }
 
 # initial_conditions = [ic for ic in os.listdir("initial_conditions") if "0.2" in ic]
-# for ic in initial_conditions:
-#     # calculate time to progression and mean field
-#     foldername = f"data/{ic[:-4]}_trajectory"
-#     parameters = default_parameters.copy()
-#     parameters["initial_condition_type"] = "initial_conditions/"+ic
-#     parameters["foldername"] = foldername
-#     model = ABM_model(parameters,verbose=True)   
-#     print("Running model")
-#     model.run(parameters["therapy"])
-#     fig,ax = plt.subplots()
-#     model.plot_celltypes_density(ax)
-#     plt.show()
-#     fig,ax = plt.subplots()
-#     fig,ax,anim = model.animate_cells([fig,ax],stride=1)
-    # anim.save(f"{foldername}/cells.mp4",fps=30)
+initial_conditions = ["resistant_core_0.2_0.1.png","resistant_rim_0.2_0.1.png"]
+# initial_conditions = ["resistant_rim_0.2_0.1.png"]
+for ic in initial_conditions:
+    # calculate time to progression and mean field
+    foldername = f"data/{ic[:-4]}_trajectory"
+    parameters = default_parameters.copy()
+    parameters["initial_condition_type"] = "initial_conditions/"+ic
+    parameters["foldername"] = foldername
+    model = ABM_model(parameters,verbose=True)   
+    print(f"Running model for {ic[:-4]}")
+    model.run(parameters["therapy"])
+    fig,ax = plt.subplots()
+    model.plot_celltypes_density(ax)
+    plt.show()
+    fig,ax = plt.subplots()
+    fig,ax,anim = model.animate_cells([fig,ax],stride=2)
+    anim.save(f"{foldername}/cells.mp4",fps=30)
 
 # path = "data/resistant_core_0.2_0.01_trajectory"
 # parameters = default_parameters.copy()
