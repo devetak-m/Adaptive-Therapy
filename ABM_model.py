@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from PIL import Image
 from matplotlib.colors import ListedColormap
+import time
 # plt.style.use('ggplot')
 
 class ABM_model:
@@ -150,18 +151,102 @@ class ABM_model:
         else:
             raise ValueError("dimension must be 2 or 3")
 
-        if initial_condition_type == "resistant_core":
+        
+        if initial_condition_type == "multiple_resistant_cores" or initial_condition_type == "multiple_resistant_rims":
+            if self.N0 > 0:
+                raise ValueError("N0 must be 0 for resistant_core initial condition")
+            try: 
+                fill_factor = self.parameters["fill_factor"]
+            except KeyError:
+                print("No fill factor given, using default fill factor 1")
+                fill_factor = 1
+            if fill_factor>1 or fill_factor<=0:
+                raise ValueError("fill_factor must be between 0 and 1")
+            if (self.S0 + self.R0) // len(core_locations) != (self.S0 + self.R0) / len(core_locations):
+                raise ValueError("Number of cells must be divisible by number of cores")
+            try:
+                core_locations = self.parameters["core_locations"]
+            except KeyError:
+                print("No core locations given, using default core locations [[],[]]")
+                core_locations = np.array([[domain_size//5,domain_size//5],[4*domain_size//5,4*domain_size//5]])
+            if (self.S0 + self.R0) // len(core_locations) != (self.S0 + self.R0) / len(core_locations):
+                raise ValueError("Number of cells must be divisible by number of cores")
+            for core_location in core_locations:
+                corex,corey = core_location
+                # make a ball of the total  number of cells
+                N_cells = (self.S0 + self.R0) // len(core_locations)
+                if self.N0 > 0:
+                    raise ValueError("N0 must be 0 for resistant_core initial condition")
+                try: 
+                    fill_factor = self.parameters["fill_factor"]
+                except KeyError:
+                    print("No fill factor given, using default fill factor 1")
+                    fill_factor = 1
+                if fill_factor>1 or fill_factor<=0:
+                    raise ValueError("fill_factor must be between 0 and 1")
+                N_cells = self.S0 + self.R0 
+                radius = (N_cells /(fill_factor*np.pi) )** (1 / 2)
+                N_generated = 0
+                iter = 0
+                while N_generated < N_cells:
+                    for i in range(self.domain_size):
+                        for j in range(self.domain_size):
+                                if (i - self.domain_size / 2) ** 2 +(j - self.domain_size / 2)** 2 < radius**2:
+                                    self.grid[i, j] = self.sensitive_type
+                    N_generated = np.sum(self.grid == self.sensitive_type)
+                    radius += 0.1 
+                    print("Increased radius by", 0.1*iter)
+                    iter +=1
+                # randomly kill surplus cells so there are exactly N_cells cells using np.random.choice
+                cell_locations = np.argwhere(self.grid == self.sensitive_type)
+                kill_surplus = np.random.choice(cell_locations.shape[0], N_generated - N_cells, replace=False)
+                self.grid[cell_locations[kill_surplus,0],cell_locations[kill_surplus,1]] = 0
+                cell_locations = np.argwhere(self.grid == self.sensitive_type)
+                # sort the cells by distance from the center
+                cell_locations_center = cell_locations - self.domain_size / 2
+                distances = np.linalg.norm(cell_locations_center, axis=1)
+                sorted_indices = np.argsort(distances)
+                cell_locations = cell_locations[sorted_indices]
+                
+                if "resistant_core" in initial_condition_type:
+                    # set the closest R0 of the cluster to be resistant 
+                    for i in range(self.R0):
+                        self.grid[tuple(cell_locations[i])] = self.resistant_type
+                    if self.verbose:
+                        print("Generated cells: ", N_generated)
+                        print("Remaining cells: ", np.sum(self.grid !=0))
+                        print("Resistant cells: ", np.sum(self.grid == self.resistant_type))
+                        print("Sensitive cells: ", np.sum(self.grid == self.sensitive_type))
+                elif "resistant_rim" in initial_condition_type:
+                    # set the R0 cells on the rim to be resistant
+                    for i in range(self.R0):
+                        self.grid[tuple(cell_locations[-i])] = self.resistant_type
+                    if self.verbose:
+                        print("Generated cells: ", N_generated)
+                        print("Remaining cells: ", np.sum(self.grid !=0))
+                        print("Resistant cells: ", np.sum(self.grid == self.resistant_type))
+                        print("Sensitive cells: ", np.sum(self.grid == self.sensitive_type))
+
+        if initial_condition_type == "resistant_core" or initial_condition_type == "resistant_rim":
             # make a ball of the total  number of cells
             if self.N0 > 0:
                 raise ValueError("N0 must be 0 for resistant_core initial condition")
-            N_cells = self.S0 + self.R0 
-            radius = (N_cells /(np.pi) )** (1 / 2)
+            try: 
+                fill_factor = self.parameters["fill_factor"]
+            except KeyError:
+                print("No fill factor given, using default fill factor 1")
+                fill_factor = 1
+            if fill_factor>1 or fill_factor<=0:
+                raise ValueError("fill_factor must be between 0 and 1")
+            N_cells = self.S0 + self.R0
+            radius = (N_cells /(fill_factor*np.pi) )** (1 / 2)
             N_generated = 0
             iter = 0
+            corex,corey = self.domain_size//2,self.domain_size//2
             while N_generated < N_cells:
                 for i in range(self.domain_size):
                     for j in range(self.domain_size):
-                            if (i - self.domain_size / 2) ** 2 +(j - self.domain_size / 2)** 2 < radius**2:
+                            if (i - corex) ** 2 +(j - corey)** 2 < radius**2:
                                 self.grid[i, j] = self.sensitive_type
                 N_generated = np.sum(self.grid == self.sensitive_type)
                 radius += 0.1 
@@ -171,20 +256,32 @@ class ABM_model:
             cell_locations = np.argwhere(self.grid == self.sensitive_type)
             kill_surplus = np.random.choice(cell_locations.shape[0], N_generated - N_cells, replace=False)
             self.grid[cell_locations[kill_surplus,0],cell_locations[kill_surplus,1]] = 0
+            cell_locations = np.argwhere(self.grid == self.sensitive_type)
             # sort the cells by distance from the center
             cell_locations_center = cell_locations - self.domain_size / 2
             distances = np.linalg.norm(cell_locations_center, axis=1)
             sorted_indices = np.argsort(distances)
             cell_locations = cell_locations[sorted_indices]
+            
+            if "resistant_core" in initial_condition_type:
+                # set the closest R0 of the cluster to be resistant 
+                for i in range(self.R0):
+                    self.grid[tuple(cell_locations[i])] = self.resistant_type
+                if self.verbose:
+                    print("Generated cells: ", N_generated)
+                    print("Remaining cells: ", np.sum(self.grid !=0))
+                    print("Resistant cells: ", np.sum(self.grid == self.resistant_type))
+                    print("Sensitive cells: ", np.sum(self.grid == self.sensitive_type))
+            elif "resistant_rim" in initial_condition_type:
+                # set the R0 cells on the rim to be resistant
+                for i in range(self.R0):
+                    self.grid[tuple(cell_locations[-i])] = self.resistant_type
+                if self.verbose:
+                    print("Generated cells: ", N_generated)
+                    print("Remaining cells: ", np.sum(self.grid !=0))
+                    print("Resistant cells: ", np.sum(self.grid == self.resistant_type))
+                    print("Sensitive cells: ", np.sum(self.grid == self.sensitive_type))
 
-            # set the closest R0 of the cluster to be resistant 
-            for i in range(self.R0):
-                self.grid[tuple(cell_locations[i])] = self.resistant_type
-            if self.verbose:
-                print("Generated cells: ", N_generated)
-                print("Remaining cells: ", np.sum(self.grid !=0))
-                print("Resistant cells: ", np.sum(self.grid == self.resistant_type))
-                print("Sensitive cells: ", np.sum(self.grid == self.sensitive_type))
 
         elif initial_condition_type == "cluster_in_normal":
 
@@ -217,7 +314,7 @@ class ABM_model:
             self.flattened_indicies = np.argwhere(self.grid == 0).reshape(
                 self.domain_size**self.dimension, self.dimension
             )
-            self.N_total = self.S0 + self.R0 + self.N0
+            self.N_total = self.S0 + self.R0
             N_grid = self.flattened_indicies.shape[0]
             self.location_indices = self.flattened_indicies[
                 np.random.choice(
@@ -332,9 +429,13 @@ class ABM_model:
                 os.mkdir(self.foldername)
             except FileExistsError:
                 raise ValueError("Folder already exists")
+        start = time.perf_counter()
         for t in range(0, self.T):
             if t % 10 == 0 and self.verbose:
                 print("t = ", t, " of ", self.T, "")
+                elapsed = time.perf_counter()-start
+                if t>0:
+                    print("Expected time remaining: ", np.round(elapsed*(self.T-t)/(60*t),1), " minutes")
             self.set_therapy(therapy_type, t)
             self.compute_death()
             self.compute_growth_S()
@@ -622,7 +723,7 @@ class ABM_model:
     def plot_celltypes_density(self, ax):
         # plot cell types density
         total = self.N0+self.S0+self.R0
-        t = np.linspace(1,self.T,self.data.shape[0]-1)*self.dt
+        t = np.linspace(0,self.T-1,self.data.shape[0]-1)*self.dt
         ax.plot(t, self.data[1:, 0], label="S")
         ax.plot(t, self.data[1:, 1], label="R")
         ax.plot(t, self.data[1:, 2], label="N")
@@ -651,7 +752,7 @@ class ABM_model:
 
         def update(j):
             i = j*stride
-            if i%10==0:
+            if i%10==0 and self.verbose:
                 print("Frame: ",i," of ",nFrames*stride,"")
             ax.clear()
             ax.axis("off")
@@ -930,12 +1031,13 @@ class ABM_model:
 if __name__ == "__main__":
 
     # set up parameters
+    domain_size = 500
     parameters = {
-        "domain_size": 1000,
+        "domain_size": domain_size,
         "T": 1000,
         "dt": 10,    
-        "S0": 0,
-        "R0": 0,
+        "S0": 20000,
+        "R0": 1000,
         "N0": 0,
         "grS": 0.023,
         "grR": 0.023,
@@ -946,7 +1048,9 @@ if __name__ == "__main__":
         "divrS": 0.75,
         "divrN": 0.5,
         "therapy": "adaptive",
-        "initial_condition_type": "initial_conditions/two_resistant_cores.png",
+        "initial_condition_type": "resistant_core",
+        "fill_factor": 0.4,
+        # "core_locations": np.array([[domain_size//5,domain_size//5],[4*domain_size//5,4*domain_size//5]]),
         "save_locations": True,
         "dimension": 2,
         "seed": 4,
@@ -957,9 +1061,9 @@ if __name__ == "__main__":
     # set up model
     model = ABM_model(parameters,True)
     # plot grid of initial conditinons for 2d
-    # fig, ax = plt.subplots(1, 1)
-    # model.plot_grid2(ax)
-    # plt.show()
+    fig, ax = plt.subplots(1, 1)
+    model.plot_grid2(ax)
+    plt.show()
 
     # show grid of initial conditions
     # fig = plt.figure()
@@ -971,14 +1075,14 @@ if __name__ == "__main__":
     # print("Model run complete.")
 
     # load data
-    model.load_locations("data/new_adaptive_data")
-    print("Loading complete")
-    fig,ax = plt.subplots(1,1)
-    model.plot_celltypes_density(ax)
-    plt.show()
-    fig,ax = plt.subplots(1,1)
-    fig,ax,anim = model.animate_cells([fig,ax],stride=1)
-    anim.save("media/new_animate_test.mp4",fps=10)
+    # model.load_locations("data/new_adaptive_data")
+    # print("Loading complete")
+    # fig,ax = plt.subplots(1,1)
+    # model.plot_celltypes_density(ax)
+    # plt.show()
+    # fig,ax = plt.subplots(1,1)
+    # fig,ax,anim = model.animate_cells([fig,ax],stride=1)
+    # anim.save("media/new_animate_test.mp4",fps=10)
     # fig,ax,anim = model.animate_cells_3d(stride=2,clip=True)
     # anim.save("media/large_adaptive_3d_clipped2.mp4",fps=30)
 
