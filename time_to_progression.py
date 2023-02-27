@@ -115,7 +115,7 @@ def ttp_ode(parameters, threshold):
     plt.plot(T, S, label='S')
     plt.plot(T, R, label='R')
     plt.plot(T, N, label='N', linestyle='--')
-    plt.plot(T, D, label='D')
+    # plt.plot(T, D, label='D')
     plt.legend()
     plt.show()
 
@@ -137,7 +137,7 @@ def ttp_ode(parameters, threshold):
     plt.plot(T, S, label='S')
     plt.plot(T, R, label='R')
     plt.plot(T, N, label='N', linestyle='--')
-    plt.plot(T, D, label='D')
+    # plt.plot(T, D, label='D')
     plt.legend()
     plt.show()
 
@@ -176,31 +176,31 @@ if __name__ == "__main__":
     "dimension" : 2,
     "seed" : 0}
 
-    time_to_progression(parameters_ABM, 10, 2, "continuous")
+    # time_to_progression(parameters_ABM, 10, 2, "continuous")
 
-    parameters_ABM["therapy"] = "adaptive"
+    # parameters_ABM["therapy"] = "adaptive"
 
-    time_to_progression(parameters_ABM, 10, 2, "adaptive")
+    # time_to_progression(parameters_ABM, 10, 2, "adaptive")
 
     parameters_ode = {
         'time_start': 0,                                  
-        'time_end': 2000,
+        'time_end': 100,
         'time_step': 0.1,
         'tolerance': 100,
         'S0': 0.125,
         'R0': 0.00625,
         'growth_rate_S': 0.023,
         'growth_rate_R': 0.023,
-        'carrying_capacity': 1,
+        'carrying_capacity': 25,
         'maximum_tollerated_dose': 1,
         'death_rate_S': 0.01,
         'death_rate_R': 0.01,
         'division_rate': 0.75,
-        'therapy_type': 'adaptive',
+        'therapy_type': 'continuous',
         'current_state': 1,
     }
 
-    # ttp_ode(parameters_ode, 2)
+    ttp_ode(parameters_ode, 2)
 
 
 

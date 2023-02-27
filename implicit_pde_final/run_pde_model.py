@@ -96,7 +96,7 @@ parameters = {
     'cut_tolerence': 1e-2
 }
 
-hf.draw_solution(S, R, N, D, X, T, parameters, show = True, save = True, save_name = 'implicit_3D_model', save_path = 'implicit_3D_model')
+# hf.draw_solution(S, R, N, D, X, T, parameters, show = True, save = True, save_name = 'implicit_3D_model', save_path = 'implicit_3D_model')
 
 print("Done")
 
