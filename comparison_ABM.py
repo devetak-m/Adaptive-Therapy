@@ -50,8 +50,11 @@ def comparison_ABM(parameters, nruns, theshold, filename = None):
         densities_R[i] = results[i][2]
 
     # save the densities in a file
-    np.save(filename + f"{filename}_densities_S", densities_S)
-    np.save(filename + f"{filename}_densities_R", densities_R)
+    S_mean = np.mean(densities_S, axis=0)
+    S_std = np.std(densities_S, axis=0)
+    R_mean = np.mean(densities_R, axis=0)
+    R_std = np.std(densities_R, axis=0)
+    np.savez(f"results_ABM/{filename}_densities.npz", S_mean=S_mean, S_std=S_std, R_mean=R_mean, R_std=R_std)
 
     # plot the average density of the model with error bars
     plt.figure()
@@ -69,8 +72,8 @@ def comparison_ABM(parameters, nruns, theshold, filename = None):
     plt.legend()
     # save plot in results_ABM folder
     plt.savefig(f"results_ABM/{filename}_densities.png")
-
     print(f"Average time to progression of {filename}: ", np.mean(ttp), "±", np.std(ttp))
+    return np.mean(ttp), np.std(ttp)
 
 if __name__ == "__main__":
 
@@ -108,11 +111,25 @@ if __name__ == "__main__":
     # define the threshold
     theshold = 1.5
 
+    # time to progression for the different combinations of parameters
+    ttp = np.zeros((len(inital_condition_types), len(therapies)))
+    # standard deviation of the time to progression for the different combinations of parameters
+    std = np.zeros((len(inital_condition_types), len(therapies)))
+
     # run the model for all the combinations of parameters
     for initial_condition_type in inital_condition_types:
         for therapy in therapies:
             parameters_ABM["initial_condition_type"] = initial_condition_type
             parameters_ABM["therapy"] = therapy
-            comparison_ABM(parameters_ABM, nruns, theshold)
+            mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold)
+            ttp[inital_condition_types.index(initial_condition_type), therapies.index(therapy)] = mean
+            std[inital_condition_types.index(initial_condition_type), therapies.index(therapy)] = std_r
+    
+    # store the results in a file
+    import pandas as pd 
+    df = pd.DataFrame(np.append([ttp,std]), columns=np.append([inital_condition_types], [therapies]), index=["ttp", "std"])
+    df.to_csv(f"results_ABM/comparison_ABM.csv")
+    np.savez(f"results_ABM/comparison_ABM.npz", ttp=ttp, std=std, inital_condition_types=inital_condition_types, therapies=therapies)
+
 
 
