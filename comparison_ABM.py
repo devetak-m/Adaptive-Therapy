@@ -133,7 +133,7 @@ if __name__ == "__main__":
         print(f"Starting test {test_num+1}/{n_tests}: {test_name}...")
         if test_num>=1:
             remaining = (time.perf_counter() - start) * (n_tests - test_num) / test_num
-            print("Time Remaining: ", np.round(remaining//60,1), "minutes")
+            print("Time Remaining: ", np.round(remaining//60,2), "minutes")
         imagename = f"results_ABM/{test_name}/initial_condition.png"
         model = ABM_model(parameters_ABM)
         plt.imsave(imagename,model.grid, cmap=model.get_cmap(),vmin=0,vmax=2)
@@ -155,7 +155,7 @@ if __name__ == "__main__":
         test_name = f"uniform_ball_{fill_factor}"
         os.mkdir(f"results_ABM/{test_name}")
         remaining = (time.perf_counter() - start) * (n_tests - test_num) / test_num
-        print("Time Remaining: ", np.round(remaining//60,1), "minutes")
+        print("Time Remaining: ", np.round(remaining//60,2), "minutes")
         imagename = f"results_ABM/{test_name}/initial_condition.png"
         model = ABM_model(parameters_ABM)
         plt.imsave(imagename,model.grid, cmap=model.get_cmap(),vmin=0,vmax=2)
@@ -177,7 +177,7 @@ if __name__ == "__main__":
     os.mkdir(f"results_ABM/{test_name}")
     print(f"Starting test {test_num+1}/{n_tests}: {test_name}...")
     remaining = (time.perf_counter() - start) * (n_tests - test_num) / test_num
-    print("Time Remaining: ", np.round(remaining//60,1), "minutes")
+    print("Time Remaining: ", np.round(remaining//60,2), "minutes")
     imagename = f"results_ABM/{test_name}/initial_condition.png"
     model = ABM_model(parameters_ABM)
     plt.imsave(imagename,model.grid, cmap=model.get_cmap(),vmin=0,vmax=2)
