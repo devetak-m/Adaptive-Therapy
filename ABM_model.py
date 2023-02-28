@@ -4,7 +4,7 @@ import os
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from PIL import Image
-from matplotlib.colors import ListedColormap
+from matplotlib.colors import ListedColormap,LightSource
 import time
 # plt.style.use('ggplot')
 
@@ -970,6 +970,7 @@ class ABM_model:
         x[1::2, :, :] += 0.95
         y[:, 1::2, :] += 0.95
         z[:, :, 1::2] += 0.95
+        ls = LightSource(azdeg=315, altdeg=180)
         ax.voxels(
             x,
             y,
@@ -977,6 +978,7 @@ class ABM_model:
             sensitive_filled_exp,
             facecolors=sensitive_facecolors_exp,
             edgecolors=sensitive_edgecolors_exp,
+            lightsource=ls,
         )
         ax.voxels(
             x,
@@ -985,6 +987,7 @@ class ABM_model:
             resistant_filled_exp,
             facecolors=resistant_facecolors_exp,
             edgecolors=resistant_edgecolors_exp,
+            lightsource=ls,
         )
         ax.voxels(
             x,
@@ -993,6 +996,7 @@ class ABM_model:
             normal_filled_exp,
             facecolors=normal_facecolors_exp,
             edgecolors=normal_edgecolors_exp,
+            lightsource=ls,
         )
         ax.set(
             xlim=(0, self.domain_size),
@@ -1035,13 +1039,13 @@ class ABM_model:
 if __name__ == "__main__":
 
     # set up parameters
-    domain_size = 500
+    domain_size = 20
     parameters = {
         "domain_size": domain_size,
         "T": 1000,
         "dt": 10,    
-        "S0": 20000,
-        "R0": 1000,
+        "S0": 400,
+        "R0": 20,
         "N0": 0,
         "grS": 0.023,
         "grR": 0.023,
@@ -1052,11 +1056,11 @@ if __name__ == "__main__":
         "divrS": 0.75,
         "divrN": 0.5,
         "therapy": "adaptive",
-        "initial_condition_type": "multiple_resistant_rims",
+        "initial_condition_type": "cluster_3d",
         "fill_factor": 0.8,
         "core_locations": np.array([[domain_size//3,domain_size//3],[2*domain_size//3,2*domain_size//3],[1*domain_size//3,2*domain_size//3],[2*domain_size//3,1*domain_size//3]]),
         "save_locations": True,
-        "dimension": 2,
+        "dimension": 3,
         "seed": 4,
         "foldername": "data/new_adaptive_data",
         "save_frequency": 100,
@@ -1065,20 +1069,20 @@ if __name__ == "__main__":
     # set up model
     model = ABM_model(parameters,False)
     # plot grid of initial conditinons for 2d
-    fig, ax = plt.subplots(1, 1)
-    model.plot_grid2(ax)
-    plt.show()
-    S0 = model.data[0, 0]
-    R0 = model.data[0, 1]
-    print(f"S0: {S0}")
-    print(f"R0: {R0}")
+    # fig, ax = plt.subplots(1, 1)
+    # model.plot_grid2(ax)
+    # plt.show()
+    # S0 = model.data[0, 0]
+    # R0 = model.data[0, 1]
+    # print(f"S0: {S0}")
+    # print(f"R0: {R0}")
 
 
     # show grid of initial conditions
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111, projection="3d")
-    # model.plot_cells_3d(0, ax,clip=True)
-
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    model.plot_cells_3d(0, ax,clip=True)
+    plt.show()
     # run model
     # model.run(parameters["therapy"])
     # print("Model run complete.")
