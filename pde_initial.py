@@ -39,14 +39,13 @@ def save_initial_conditions(parameters_ABM,filename= None, show = True):
     sensitive_image = Image.fromarray(sensitive_grid)
     sensitive_resized = sensitive_image.resize((new_size,new_size))
     sensitive_array = np.array(sensitive_resized)/255
+    # BUG for some reason negative. Just rounding up for now
+    sensitive_array[sensitive_array<0] = 0
     sensitive_array *= (S0/(total))/np.sum(sensitive_array)
     resistant_image = Image.fromarray(resistant_grid)
     resistant_resized = resistant_image.resize((new_size,new_size))
     resistant_array = np.array(resistant_resized)/255
-    # BUG for some reason negative. Just rounding up for now
     resistant_array[resistant_array<0] = 0
-    sensitive_array[sensitive_array<0] = 0
-    
     resistant_array *= (R0/(total))/np.sum(resistant_array)
     np.sum(sensitive_array+resistant_array)
     print(np.sum(sensitive_array)/np.sum(resistant_array))
