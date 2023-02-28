@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import multiprocessing as mp
 from ABM_model import ABM_model
-import PIL
+import time
+import os 
 def run_ABM(parameters, i, theshold):
     # set the seed
     parameters['seed'] = i
@@ -23,11 +24,11 @@ def run_ABM(parameters, i, theshold):
     return ttp, density_S, density_R
 
 
-def comparison_ABM(parameters, nruns, theshold, filename = None):
-    if filename is None:
-        filename = f"comparison_ABM_{parameters['therapy']}_initial_condition_{parameters['initial_condition_type']}"
+def comparison_ABM(parameters, nruns, theshold, folder_name = None):
+    if folder_name is None:
+        folder_name = f"results_ABM/comparison_ABM_{parameters['therapy']}_initial_condition_{parameters['initial_condition_type']}"
 
-    # print("Running time to progression for", filename, "...")
+    # print("Running time to progression for", folder_name, "...")
 
     # initialize the arrays that will store the statistics
     ttp = np.zeros(nruns)
@@ -53,7 +54,7 @@ def comparison_ABM(parameters, nruns, theshold, filename = None):
     S_std = np.std(densities_S, axis=0)
     R_mean = np.mean(densities_R, axis=0)
     R_std = np.std(densities_R, axis=0)
-    np.savez(f"results_ABM/{filename}_densities.npz", S_mean=S_mean, S_std=S_std, R_mean=R_mean, R_std=R_std)
+    np.savez(f"{folder_name}_densities.npz", S_mean=S_mean, S_std=S_std, R_mean=R_mean, R_std=R_std)
 
     # plot the average density of the model with error bars
     plt.figure()
@@ -70,8 +71,9 @@ def comparison_ABM(parameters, nruns, theshold, filename = None):
     plt.ylabel("Density")
     plt.legend()
     # save plot in results_ABM folder
-    plt.savefig(f"results_ABM/{filename}_densities.png")
-    # print(f"Average time to progression of {filename}: ", np.mean(ttp), "±", np.std(ttp))
+    plt.savefig(f"{folder_name}_densities_plot.png")
+    plt.close()
+    # print(f"Average time to progression of {folder_name}: ", np.mean(ttp), "±", np.std(ttp))
     return np.mean(ttp), np.std(ttp)
 
 if __name__ == "__main__":
@@ -81,11 +83,14 @@ if __name__ == "__main__":
     # define the parameters of the model
     domain_size = 400
     parameters_ABM = {
-        "domain_size" : domain_size,
-        "T" : 10,
+        # "domain_size" : domain_size,
+        "domain_size" : 20,
+        "T" : 2,
         "dt" : 1,
-        "S0" : 8000,
-        "R0" : 800,
+        # "S0" : 8000,
+        # "R0" : 800,
+        "S0" : 100,
+        "R0" : 10,
         "N0" : 0,
         "grS" : 0.023,
         "grR" : 0.023,
@@ -103,82 +108,95 @@ if __name__ == "__main__":
         "dimension" : 2,
         "seed" : 1}
     # NUMBER OF RUNS
-    nruns = 10
+    nruns = 1
 
     # define parameters to compare
-    initial_condition_types  = ["resistant_core","resistant_rim","multiple_resistant_cores","multiple_resistant_rims"]
     therapies = ["continuous", "adaptive", "notherapy"]
+    n_tests = 8
 
     # define the threshold
     theshold = 1.5
 
     # time to progression for the different combinations of parameters
-    ttp = np.zeros((len(initial_condition_types), len(therapies)))
+    ttp = np.zeros((n_tests, len(therapies)))
     # standard deviation of the time to progression for the different combinations of parameters
-    std = np.zeros((len(initial_condition_types), len(therapies)))
+    std = np.zeros((n_tests, len(therapies)))
 
     # run the model for all the combinations of parameters
+    start = time.perf_counter()
     test_num = 0
+    initial_condition_types  = ["resistant_core","resistant_rim","multiple_resistant_cores","multiple_resistant_rims"]
     for initial_condition_type in initial_condition_types:
         # print("Running for initial condition type", initial_condition_type, "...")
         test_name = initial_condition_type
-        test_num += 1
+        os.mkdir(f"results_ABM/{test_name}")
+        print(f"Starting test {test_num+1}/{n_tests}: {test_name}...")
+        if test_num>=1:
+            remaining = (time.perf_counter() - start) * (n_tests - test_num) / test_num
+            print("Time Remaining: ", np.round(remaining//60,1), "minutes")
+        imagename = f"results_ABM/{test_name}/initial_condition.png"
+        model = ABM_model(parameters_ABM)
+        plt.imsave(imagename,model.grid, cmap=model.get_cmap(),vmin=0,vmax=2)
         for therapy in therapies:
             # print("Therapy = ", therapy, "...")
             parameters_ABM["initial_condition_type"] = initial_condition_type
             parameters_ABM["therapy"] = therapy
             model = ABM_model(parameters_ABM)
-            # save image
-            filename = f"results_ABM/{initial_condition_type}.png"
-            plt.imsave(filename,model.grid, cmap=model.get_cmap(),vmin=0,vmax=2)
-            mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold)
+            folder_name = f"results_ABM/{test_name}/{therapy}"
+            mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold,folder_name=folder_name)
             ttp[test_num, therapies.index(therapy)] = mean
             std[test_num, therapies.index(therapy)] = std_r
-    
+        test_num += 1
     # uniform_tests
     fill_factors = [0.8,0.9,1]
     parameters_ABM["initial_condition_type"] = "uniform_ball"
     for fill_factor in fill_factors:
         # print("Starting uniform ball test with fill factor", fill_factor, "...")
         test_name = f"uniform_ball_{fill_factor}"
-        test_num += 1
+        os.mkdir(f"results_ABM/{test_name}")
+        remaining = (time.perf_counter() - start) * (n_tests - test_num) / test_num
+        print("Time Remaining: ", np.round(remaining//60,1), "minutes")
+        imagename = f"results_ABM/{test_name}/initial_condition.png"
+        model = ABM_model(parameters_ABM)
+        plt.imsave(imagename,model.grid, cmap=model.get_cmap(),vmin=0,vmax=2)
         for therapy in therapies:
             # print("Therapy = ", therapy, "...")
             parameters_ABM["fill_factor"] = fill_factor
             parameters_ABM["therapy"] = therapy
             model = ABM_model(parameters_ABM)
-            # save image
-            filename = f"results_ABM/{test_name}.png"
-            plt.imsave(filename,model.grid, cmap=model.get_cmap(),vmin=0,vmax=2)
-            mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold)
+            folder_name = f"results_ABM/{test_name}/{therapy}"
+            mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold,folder_name=folder_name)
             ttp[test_num, therapies.index(therapy)] = mean
             std[test_num, therapies.index(therapy)] = std_r
+        test_num += 1
 
     parameters_ABM["domain_size"] = 200
     parameters_ABM["initial_condition_type"] = "uniform"
     # print("Starting uniform test...")
     test_name = "uniform"
-    test_num += 1
+    os.mkdir(f"results_ABM/{test_name}")
+    print(f"Starting test {test_num+1}/{n_tests}: {test_name}...")
+    remaining = (time.perf_counter() - start) * (n_tests - test_num) / test_num
+    print("Time Remaining: ", np.round(remaining//60,1), "minutes")
+    imagename = f"results_ABM/{test_name}/initial_condition.png"
+    model = ABM_model(parameters_ABM)
+    plt.imsave(imagename,model.grid, cmap=model.get_cmap(),vmin=0,vmax=2)
     for therapy in therapies:
         # print("Therapy = ", therapy, "...")
         parameters_ABM["fill_factor"] = fill_factor
         parameters_ABM["therapy"] = therapy
-        model = ABM_model(parameters_ABM)
-        # save image
-        filename = f"results_ABM/{test_name}.png"
-        plt.imsave(filename,model.grid, cmap=model.get_cmap(),vmin=0,vmax=2)
-        mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold)
+        folder_name = f"results_ABM/{test_name}/{therapy}"
+        mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold,folder_name=folder_name)
         ttp[test_num, therapies.index(therapy)] = mean
         std[test_num, therapies.index(therapy)] = std_r
 
 
-
-
     # store the results in a file
     import pandas as pd 
-    df = pd.DataFrame(ttp,index=initial_condition_types,columns=therapies)
+    test_names = initial_condition_types + [f"uniform_ball_{fill_factor}" for fill_factor in fill_factors] + ["uniform"]
+    df = pd.DataFrame(ttp,index=test_names,columns=therapies)
     df.to_csv(f"results_ABM/comparison_means.csv")
-    df = pd.DataFrame(std,index=initial_condition_types,columns=therapies)
+    df = pd.DataFrame(std,index=test_names,columns=therapies)
     df.to_csv(f"results_ABM/comparison_std.csv")
 
 
