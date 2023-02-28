@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import multiprocessing as mp
 from ABM_model import ABM_model
-import pickle
+import PIL
 def run_ABM(parameters, i, theshold):
     # set the seed
     parameters['seed'] = i
@@ -27,7 +27,7 @@ def comparison_ABM(parameters, nruns, theshold, filename = None):
     if filename is None:
         filename = f"comparison_ABM_{parameters['therapy']}_initial_condition_{parameters['initial_condition_type']}"
 
-    print("Running time to progression for", filename, "...")
+    # print("Running time to progression for", filename, "...")
 
     # initialize the arrays that will store the statistics
     ttp = np.zeros(nruns)
@@ -71,18 +71,18 @@ def comparison_ABM(parameters, nruns, theshold, filename = None):
     plt.legend()
     # save plot in results_ABM folder
     plt.savefig(f"results_ABM/{filename}_densities.png")
-    print(f"Average time to progression of {filename}: ", np.mean(ttp), "±", np.std(ttp))
+    # print(f"Average time to progression of {filename}: ", np.mean(ttp), "±", np.std(ttp))
     return np.mean(ttp), np.std(ttp)
 
 if __name__ == "__main__":
 
-    print("Starting the simulation...")
+    # print("Starting the simulation...")
 
     # define the parameters of the model
     domain_size = 400
     parameters_ABM = {
         "domain_size" : domain_size,
-        "T" : 600,
+        "T" : 10,
         "dt" : 1,
         "S0" : 8000,
         "R0" : 800,
@@ -118,32 +118,59 @@ if __name__ == "__main__":
     std = np.zeros((len(initial_condition_types), len(therapies)))
 
     # run the model for all the combinations of parameters
+    test_num = 0
     for initial_condition_type in initial_condition_types:
+        # print("Running for initial condition type", initial_condition_type, "...")
+        test_name = initial_condition_type
+        test_num += 1
         for therapy in therapies:
+            # print("Therapy = ", therapy, "...")
             parameters_ABM["initial_condition_type"] = initial_condition_type
             parameters_ABM["therapy"] = therapy
             model = ABM_model(parameters_ABM)
-            fig,ax = plt.subplots()  
-            ax = model.plot_grid2(ax)
-            plt.savefig(f"results_ABM/{initial_condition_type}.png")
-            # mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold)
-            # ttp[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = mean
-            # std[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = std_r
+            # save image
+            filename = f"results_ABM/{initial_condition_type}.png"
+            plt.imsave(filename,model.grid, cmap=model.get_cmap(),vmin=0,vmax=2)
+            mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold)
+            ttp[test_num, therapies.index(therapy)] = mean
+            std[test_num, therapies.index(therapy)] = std_r
     
-    # uniform tests
+    # uniform_tests
+    fill_factors = [0.8,0.9,1]
+    parameters_ABM["initial_condition_type"] = "uniform_ball"
+    for fill_factor in fill_factors:
+        # print("Starting uniform ball test with fill factor", fill_factor, "...")
+        test_name = f"uniform_ball_{fill_factor}"
+        test_num += 1
+        for therapy in therapies:
+            # print("Therapy = ", therapy, "...")
+            parameters_ABM["fill_factor"] = fill_factor
+            parameters_ABM["therapy"] = therapy
+            model = ABM_model(parameters_ABM)
+            # save image
+            filename = f"results_ABM/{test_name}.png"
+            plt.imsave(filename,model.grid, cmap=model.get_cmap(),vmin=0,vmax=2)
+            mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold)
+            ttp[test_num, therapies.index(therapy)] = mean
+            std[test_num, therapies.index(therapy)] = std_r
+
+    parameters_ABM["domain_size"] = 200
+    parameters_ABM["initial_condition_type"] = "uniform"
+    # print("Starting uniform test...")
+    test_name = "uniform"
+    test_num += 1
     for therapy in therapies:
-        parameters_ABM["initial_condition_type"] = initial_condition_type
+        # print("Therapy = ", therapy, "...")
+        parameters_ABM["fill_factor"] = fill_factor
         parameters_ABM["therapy"] = therapy
         model = ABM_model(parameters_ABM)
-        fig,ax = plt.subplots()  
-        ax = model.plot_grid2(ax)
-        plt.savefig(f"results_ABM/{initial_condition_type}.png")
+        # save image
+        filename = f"results_ABM/{test_name}.png"
+        plt.imsave(filename,model.grid, cmap=model.get_cmap(),vmin=0,vmax=2)
         mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold)
-        ttp[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = mean
-        std[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = std_r
-    # mean, std_r = comparison_ABM(parameters_ABM, nruns, theshold)
-    # ttp[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = mean
-    # std[initial_condition_types.index(initial_condition_type), therapies.index(therapy)] = std_r
+        ttp[test_num, therapies.index(therapy)] = mean
+        std[test_num, therapies.index(therapy)] = std_r
+
 
 
 
