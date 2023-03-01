@@ -3,11 +3,11 @@ import numpy as np
 from ABM_model import ABM_model
 import matplotlib.pyplot as plt
 default_parameters = {
-        "domain_size": 1000,
-        "T": 10000,
+        "domain_size": 500,
+        "T": 2000,
         "dt": 1,    
-        "S0": 0,
-        "R0": 0,
+        "S0": 8000,
+        "R0": 800,
         "N0": 0,
         "grS": 0.023,
         "grR": 0.023,
@@ -21,19 +21,20 @@ default_parameters = {
         "initial_condition_type": None,
         "save_locations": True,
         "dimension": 2,
-        "seed": 4,
+        "seed": 0,
         "foldername": None,
-        "save_frequency": 1000,
+        "save_frequency": 2000,
     }
 
 # initial_conditions = [ic for ic in os.listdir("initial_conditions") if "0.2" in ic]
-initial_conditions = ["resistant_core_0.2_0.1.png","resistant_rim_0.2_0.1.png"]
+# initial_conditions = ["resistant_core_0.2_0.1.png","resistant_rim_0.2_0.1.png"]
 # initial_conditions = ["resistant_rim_0.2_0.1.png"]
+initial_conditions = ["resistant_core","resistant_rim"]
 for ic in initial_conditions:
     # calculate time to progression and mean field
-    foldername = f"data/{ic[:-4]}_trajectory"
+    foldername = f"data/{ic}_trajectory"
     parameters = default_parameters.copy()
-    parameters["initial_condition_type"] = "initial_conditions/"+ic
+    parameters["initial_condition_type"] = ic
     parameters["foldername"] = foldername
     model = ABM_model(parameters,verbose=True)   
     print(f"Running model for {ic[:-4]}")
