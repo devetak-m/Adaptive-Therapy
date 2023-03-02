@@ -25,7 +25,7 @@ parameters_ABM = {
     "save_locations" : False,
     "dimension" : 2,
     "seed" : 1}
-new_size = 20
+new_size = 30
 def save_initial_conditions(parameters_ABM,filename= None, show = True):
     S0 = parameters_ABM["S0"]
     R0 = parameters_ABM["R0"]
@@ -49,8 +49,8 @@ def save_initial_conditions(parameters_ABM,filename= None, show = True):
     resistant_array *= (R0/(total))/np.sum(resistant_array)
     np.sum(sensitive_array+resistant_array)
     print(np.sum(sensitive_array)/np.sum(resistant_array))
-    np.save(f"{filename}_sensitive.npy",sensitive_array)
-    np.save(f"{filename}_resistant.npy",resistant_array)
+    np.save(f"{filename}_sensitive_40.npy",sensitive_array)
+    np.save(f"{filename}_resistant_40.npy",resistant_array)
     if show:
         fig,ax = plt.subplots(1,2)
         ax[0].axis("off")

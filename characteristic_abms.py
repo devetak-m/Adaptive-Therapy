@@ -18,7 +18,7 @@ default_parameters = {
         "drN": 0.0,
         "divrS": 0.75,
         "divrN": 0.5,
-        "therapy": "adaptive",
+        "therapy": "continuous",
         "initial_condition_type": None,
         "save_locations": True,
         "dimension": 2,
@@ -31,10 +31,10 @@ default_parameters = {
 # initial_conditions = [ic for ic in os.listdir("initial_conditions") if "0.2" in ic]
 # initial_conditions = ["resistant_core_0.2_0.1.png","resistant_rim_0.2_0.1.png"]
 # initial_conditions = ["resistant_rim_0.2_0.1.png"]
-initial_conditions = ["multiple_resistant_cores","multiple_resistant_rims"]
+initial_conditions = ["resistant_core","resistant_rim"]
 for ic in initial_conditions:
     # calculate time to progression and mean field
-    foldername = f"data/{ic}_trajectory"
+    foldername = f"data/{ic}_trajectory3"
     parameters = default_parameters.copy()
     parameters["initial_condition_type"] = ic
     parameters["foldername"] = foldername
@@ -43,7 +43,7 @@ for ic in initial_conditions:
     model.run(parameters["therapy"])
     fig,ax = plt.subplots()
     model.plot_celltypes_density(ax)
-    plt.show()
+    plt.savefig(f"{foldername}/graph.png")
     fig,ax = plt.subplots()
     fig,ax,anim = model.animate_cells([fig,ax],stride=10)
     anim.save(f"{foldername}/cells.mp4",fps=30)

@@ -122,8 +122,6 @@ class ABM_model:
             self.T = round(self.T)
         if self.dt < 0:
             raise ValueError("dt must be non-negative")
-        if self.dt > self.T:
-            raise ValueError("dt must be less than T")
         if self.R0+self.S0+self.N0>self.domain_size**self.dimension:
             print("Number of cells: ",self.R0+self.S0+self.N0)
             print("Domain volume: ",self.domain_size**self.dimension)
@@ -810,7 +808,7 @@ class ABM_model:
                 self.grid[location[0], location[1], location[2]] = location[3]
         return self.grid
 
-    def animate_cells_graph(self, interval=20, stride=1):
+    def animate_cells_graph(self, interval=20, stride=20):
         fig = plt.figure()
         fig.set_size_inches(10, 5)
         ax0 = fig.add_subplot(121)
@@ -821,64 +819,25 @@ class ABM_model:
         j = 2
         (lineS,) = ax0.plot(np.arange(1, j), self.data[1:j, 0], label="S")
         (lineR,) = ax0.plot(np.arange(1, j), self.data[1:j, 1], label="R")
-        (lineN,) = ax0.plot(np.arange(1, j), self.data[1:j, 2], label="N")
+        # (lineN,) = ax0.plot(np.arange(1, j), self.data[1:j, 2], label="N")
+        (lineT,) = ax0.plot(np.arange(1, j), self.data[1:j, 0]+self.data[1:j, 1], label="Total")
         (lineD,) = ax0.plot(np.arange(1, j), self.data[1:j, 3] * 100, label="Therapy")
         ax0.set_xlabel("Time")
         ax0.set_ylabel("Density")
         total_max = np.max(np.sum(self.data[:,0:3],axis=1))
         ax0.set(xlim=(0, self.T),ylim=(0,total_max))
         ax0.legend()
-
-        nFrames = self.T - 1
+        print(self.T)
+        nFrames = (self.T - 1)//stride
+        print(nFrames)
         if self.dimension == 2:
-            # print(f"{self.location_data[1].shape=}")
-            sensitiveLocations = self.location_data[1][
-                self.location_data[1][:, 2] == self.sensitive_type, :2
-            ]
-            resistantLocations = self.location_data[1][
-                self.location_data[1][:, 2] == self.resistant_type, :2
-            ]
-            normalLocations = self.location_data[1][
-                self.location_data[1][:, 2] == self.normal_type, :2
-            ]
-            scale = 20000 / self.domain_size**self.dimension
-            # scale = 100
-            sS = ax1.scatter(
-                sensitiveLocations[:, 0],
-                sensitiveLocations[:, 1],
-                c="b",
-                marker="s",
-                s=scale,
-            )
-            sR = ax1.scatter(
-                resistantLocations[:, 0],
-                resistantLocations[:, 1],
-                c="r",
-                marker="s",
-                s=scale,
-            )
-            sN = ax1.scatter(
-                normalLocations[:, 0],
-                normalLocations[:, 1],
-                c="g",
-                marker="s",
-                s=scale,
-            )
-            ax1.set(
-                xlim=(-0.5, self.domain_size + 0.5), ylim=(-0.5, self.domain_size + 0.5)
-            )
-            ax1.vlines(
-                np.linspace(0, self.domain_size - 1, self.domain_size) - 0.5,
-                0,
-                self.domain_size,
-                linewidth=0.1,
-            )
-            ax1.hlines(
-                np.linspace(0, self.domain_size - 1, self.domain_size) - 0.5,
-                0,
-                self.domain_size,
-                linewidth=0.1,
-            )
+            sensitiveLocations = self.location_data[1][self.location_data[1][:, 2] == 1, :2].astype(int)
+            resistantLocations = self.location_data[1][self.location_data[1][:, 2] == 2, :2].astype(int)
+            self.current_grid = np.zeros((self.domain_size, self.domain_size))
+            self.current_grid[sensitiveLocations[:, 0], sensitiveLocations[:, 1]] = 1
+            self.current_grid[resistantLocations[:, 0], resistantLocations[:, 1]] = 2
+            cmap = self.get_cmap()
+            ax1.imshow(self.current_grid, cmap=cmap)
             ax1.axis("equal")
             ax1.axis("off")
         elif self.dimension == 3:
@@ -887,33 +846,39 @@ class ABM_model:
         # ax1.set(xlim=(70,130),ylim=(70,130))
         def update(j):
             i = j * stride
+            print(i)
             if self.verbose:
-                print("Updating frame", i, "of", nFrames)
+                print("Updating frame", j, "of", nFrames)
             lineS.set_data(np.arange(1, i), self.data[1:i, 0])
             lineR.set_data(np.arange(1, i), self.data[1:i, 1])
-            lineN.set_data(np.arange(1, i), self.data[1:i, 2])
+            # lineN.set_data(np.arange(1, i), self.data[1:i, 2])
+            lineT.set_data(np.arange(1, i), self.data[1:i, 0]+self.data[1:i,1])
             lineD.set_data(np.arange(1, i), self.data[1:i, 3] * 100)
 
             if self.dimension == 2:
+                if i%100==0 and self.verbose:
+                    print("Frame: ",i," of ",nFrames*stride,"")
+                ax1.clear()
+                ax1.axis("off")
+                ax1.axis("equal")
                 sensitiveLocations = self.location_data[i + 1][
-                    self.location_data[i + 1][:, 2] == self.sensitive_type, :2
-                ]
+                    self.location_data[i + 1][:, 2] == 1, :2
+                ].astype(int)
                 resistantLocations = self.location_data[i + 1][
-                    self.location_data[i + 1][:, 2] == self.resistant_type, :2
-                ]
-                normalLocations = self.location_data[i + 1][
-                    self.location_data[i + 1][:, 2] == self.normal_type, :2
-                ]
-                sS.set_offsets(sensitiveLocations)
-                sR.set_offsets(resistantLocations)
-                sN.set_offsets(normalLocations)
+                    self.location_data[i + 1][:, 2] == 2, :2
+                ].astype(int)
+                self.current_grid = np.zeros((self.domain_size, self.domain_size))
+                self.current_grid[sensitiveLocations[:, 0], sensitiveLocations[:, 1]] = 1
+                self.current_grid[resistantLocations[:, 0], resistantLocations[:, 1]] = 2
+                ax1.imshow(self.current_grid, cmap=cmap)
+                
             else:
                 ax1.clear()
                 self.plot_cells_3d(i + 1, ax=ax1, clip=True)
                 ax1.axis("off")
 
         anim = animation.FuncAnimation(
-            fig=fig, func=update, frames=nFrames // stride, interval=interval
+            fig=fig, func=update, frames=nFrames, interval=interval
         )
         ax = [ax0, ax1]
         return fig, ax, anim
@@ -935,6 +900,7 @@ class ABM_model:
             sensitive_voxels[self.domain_size // 2 :, :, :] = 0
         sensitive_facecolors = np.where(sensitive_voxels, "#5692CD", "#7A88CCC0")
         sensitive_edgecolors = np.where(sensitive_voxels, "#000000", "#7D84A6")
+        sensitive_edgecolors = np.where(sensitive_voxels, None, "#7D84A6")
         sensitive_filled = sensitive_voxels.copy()
         sensitive_facecolors_exp = self.explode(sensitive_facecolors)
         sensitive_edgecolors_exp = self.explode(sensitive_edgecolors)
@@ -945,7 +911,7 @@ class ABM_model:
         if clip:
             resistant_voxels[self.domain_size // 2 :, :, :] = 0
         resistant_facecolors = np.where(resistant_voxels, "#BF1818", "#7A88CCC0")
-        resistant_edgecolors = np.where(resistant_voxels, "#000000", "#7D84A6")
+        resistant_edgecolors = np.where(resistant_voxels, None, "#7D84A6")
         resistant_filled = resistant_voxels.copy()
         resistant_facecolors_exp = self.explode(resistant_facecolors)
         resistant_edgecolors_exp = self.explode(resistant_edgecolors)
@@ -1039,13 +1005,13 @@ class ABM_model:
 if __name__ == "__main__":
 
     # set up parameters
-    domain_size = 20
+    domain_size = 40
     parameters = {
         "domain_size": domain_size,
-        "T": 1000,
-        "dt": 10,    
-        "S0": 400,
-        "R0": 20,
+        "T": 400,
+        "dt": 2,    
+        "S0": 20000,
+        "R0": 1000,
         "N0": 0,
         "grS": 0.023,
         "grR": 0.023,
@@ -1062,12 +1028,12 @@ if __name__ == "__main__":
         "save_locations": True,
         "dimension": 3,
         "seed": 4,
-        "foldername": "data/new_adaptive_data",
+        "foldername": "data/new_adaptive_data3",
         "save_frequency": 100,
     }
 
     # set up model
-    model = ABM_model(parameters,False)
+    model = ABM_model(parameters,True)
     # plot grid of initial conditinons for 2d
     # fig, ax = plt.subplots(1, 1)
     # model.plot_grid2(ax)
@@ -1079,13 +1045,17 @@ if __name__ == "__main__":
 
 
     # show grid of initial conditions
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection="3d")
-    model.plot_cells_3d(0, ax,clip=True)
-    plt.show()
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111, projection="3d")
+    # model.plot_cells_3d(0, ax,clip=True)
     # run model
-    # model.run(parameters["therapy"])
-    # print("Model run complete.")
+    model.run(parameters["therapy"])
+    print("Model run complete.")
+    fig1,ax1 = plt.subplots()
+    model.plot_celltypes_density(ax1)
+    plt.show()
+    fig,ax,anim = model.animate_cells_graph(stride=1)
+    anim.save("media/large_adaptive2.mp4")
 
     # load data
     # model.load_locations("data/new_adaptive_data")
