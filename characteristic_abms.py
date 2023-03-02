@@ -2,8 +2,9 @@ import os
 import numpy as np
 from ABM_model import ABM_model
 import matplotlib.pyplot as plt
+domain_size = 200
 default_parameters = {
-        "domain_size": 500,
+        "domain_size": domain_size,
         "T": 2000,
         "dt": 1,    
         "S0": 8000,
@@ -21,6 +22,7 @@ default_parameters = {
         "initial_condition_type": None,
         "save_locations": True,
         "dimension": 2,
+        "core_locations": np.array([[domain_size//4,domain_size//4],[3*domain_size//4,3*domain_size//4]]),
         "seed": 0,
         "foldername": None,
         "save_frequency": 2000,
@@ -29,7 +31,7 @@ default_parameters = {
 # initial_conditions = [ic for ic in os.listdir("initial_conditions") if "0.2" in ic]
 # initial_conditions = ["resistant_core_0.2_0.1.png","resistant_rim_0.2_0.1.png"]
 # initial_conditions = ["resistant_rim_0.2_0.1.png"]
-initial_conditions = ["resistant_core","resistant_rim"]
+initial_conditions = ["multiple_resistant_cores","multiple_resistant_rims"]
 for ic in initial_conditions:
     # calculate time to progression and mean field
     foldername = f"data/{ic}_trajectory"
@@ -43,7 +45,7 @@ for ic in initial_conditions:
     model.plot_celltypes_density(ax)
     plt.show()
     fig,ax = plt.subplots()
-    fig,ax,anim = model.animate_cells([fig,ax],stride=2)
+    fig,ax,anim = model.animate_cells([fig,ax],stride=10)
     anim.save(f"{foldername}/cells.mp4",fps=30)
 
 # path = "data/resistant_core_0.2_0.01_trajectory"
