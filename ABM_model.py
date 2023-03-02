@@ -75,6 +75,7 @@ class ABM_model:
         self.divrS = parameters["divrS"]
         self.divrN = parameters["divrN"]
         self.dimension = parameters["dimension"]
+        self.diffusion_rate = parameters["diffusion_rate"]
         try:
             self.foldername = parameters["foldername"]
         except KeyError:
@@ -440,6 +441,7 @@ class ABM_model:
             self.compute_growth_S()
             self.compute_growth_R()
             self.compute_growth_N()
+            self.compute_diffusion()
 
             # compute number of resistant and sensitive cells
             self.data[t, 0] = np.sum(self.grid == self.sensitive_type)
@@ -599,6 +601,25 @@ class ABM_model:
                                 # if empty, cell divides
                                 self.grid[tuple(neighbour)] = 3
                                 break
+    def compute_diffusion(self):
+        cells = np.argwhere(self.grid != 0)
+        for cell in cells:
+            if np.random.random() < self.diffusion_rate * self.dt:
+                # get all neighbours
+                    neighbours = self.get_neighbours(cell)
+                    count = 0
+                    for neighbour in neighbours:
+                        if self.grid[tuple(neighbour)] == 0:
+                            count += 1
+                    # check if a neighbour is empty
+                    if count > 0:
+                        np.random.shuffle(neighbours)
+                        for neighbour in neighbours:
+                                if self.grid[tuple(neighbour)] == 0:
+                                    # if empty, cell divides
+                                    self.grid[tuple(neighbour)] = self.grid[tuple(cell)]
+                                    self.grid[tuple(cell)] = 0
+                                    break
 
     def get_neighbours(self, cell):
         # get neighbours of cell
