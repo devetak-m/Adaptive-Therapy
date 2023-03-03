@@ -123,6 +123,10 @@ class ABM_model:
             self.T = round(self.T)
         if self.dt < 0:
             raise ValueError("dt must be non-negative")
+        if self.dt*self.diffusion_rate > 0.1:
+            print("Warning: dt*diffusion_rate is greater than 0.1, simulation will be inaccurate")
+        if self.dt *self.diffusion_rate>1:
+            raise ValueError("dt*diffusion_rate must be less than 1")
         if self.R0+self.S0+self.N0>self.domain_size**self.dimension:
             print("Number of cells: ",self.R0+self.S0+self.N0)
             print("Domain volume: ",self.domain_size**self.dimension)
@@ -508,6 +512,7 @@ class ABM_model:
         # compute death of cells
         # get all cells with S
         cells = np.argwhere(self.grid == self.sensitive_type)
+        np.random.shuffle(cells)
         for cell in cells:
             if np.random.random() < self.drS * self.dt:
                 # cell dies
@@ -527,11 +532,12 @@ class ABM_model:
     def compute_growth_S(self):
         # get all cells with S
         cells = np.argwhere(self.grid == self.sensitive_type)
+        np.random.shuffle(cells)
         for cell in cells:
             # it grows with probability grS
             if np.random.random() < self.grS * self.dt:
                 # get all neighbours
-                neighbours = self.get_neighbours(cell)
+                neighbours = self.get_neighbours(cell)[::-1]
                 count = 0
                 for neighbour in neighbours:
                     if self.grid[tuple(neighbour)] == 0:
@@ -555,11 +561,12 @@ class ABM_model:
     def compute_growth_R(self):
         # get all cells with R
         cells = np.argwhere(self.grid == self.resistant_type)
+        np.random.shuffle(cells)
         for cell in cells:
             # it grows with probability grR
             if np.random.random() < self.grR * self.dt:
                 # get all neighbours
-                neighbours = self.get_neighbours(cell)
+                neighbours = self.get_neighbours(cell)[::-1]
                 count = 0
                 for neighbour in neighbours:
                     if self.grid[tuple(neighbour)] == 0:
@@ -578,11 +585,12 @@ class ABM_model:
     def compute_growth_N(self):
         # get all cells with R
         cells = np.argwhere(self.grid == self.normal_type)
+        np.random.shuffle(cells)
         for cell in cells:
             # it grows with probability grR
             if np.random.random() < self.grN * self.dt:
                 # get all neighbours
-                neighbours = self.get_neighbours(cell)
+                neighbours = self.get_neighbours(cell)[::-1]
                 count = 0
                 for neighbour in neighbours:
                     if self.grid[tuple(neighbour)] == 0:
@@ -603,23 +611,30 @@ class ABM_model:
                                 break
     def compute_diffusion(self):
         cells = np.argwhere(self.grid != 0)
-        for cell in cells:
+        np.random.shuffle(cells)
+        for cell in cells[::-1]:
             if np.random.random() < self.diffusion_rate * self.dt:
                 # get all neighbours
-                    neighbours = self.get_neighbours(cell)
+                    neighbours = self.get_neighbours(cell)[::-1]
                     count = 0
+                    free_neighbours = []
                     for neighbour in neighbours:
                         if self.grid[tuple(neighbour)] == 0:
+                            free_neighbours.append(neighbour)
                             count += 1
                     # check if a neighbour is empty
                     if count > 0:
-                        np.random.shuffle(neighbours)
-                        for neighbour in neighbours:
-                                if self.grid[tuple(neighbour)] == 0:
-                                    # if empty, cell divides
-                                    self.grid[tuple(neighbour)] = self.grid[tuple(cell)]
-                                    self.grid[tuple(cell)] = 0
-                                    break
+                        new_index  = np.random.choice(count)
+                        new_location = free_neighbours[new_index]
+                        self.grid[tuple(new_location)] = self.grid[tuple(cell)]
+                        self.grid[tuple(cell)] = 0
+                        # np.random.shuffle(neighbours)
+                        # for neighbour in neighbours:
+                        #         if self.grid[tuple(neighbour)] == 0:
+                        #             # if empty, cell hops
+                        #             self.grid[tuple(neighbour)] = self.grid[tuple(cell)]
+                        #             self.grid[tuple(cell)] = 0
+                        #             break
 
     def get_neighbours(self, cell):
         # get neighbours of cell
@@ -867,9 +882,9 @@ class ABM_model:
         # ax1.set(xlim=(70,130),ylim=(70,130))
         def update(j):
             i = j * stride
-            print(i)
             if self.verbose:
-                print("Updating frame", j, "of", nFrames)
+                if j//50==0:
+                    print("Updating frame", j, "of", nFrames)
             lineS.set_data(np.arange(1, i), self.data[1:i, 0])
             lineR.set_data(np.arange(1, i), self.data[1:i, 1])
             # lineN.set_data(np.arange(1, i), self.data[1:i, 2])
