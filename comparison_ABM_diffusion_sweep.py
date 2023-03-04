@@ -126,11 +126,18 @@ if __name__ == "__main__":
     std_time_to_progression = np.zeros((len(test_names), len(diffusions),len(therapies)))
     param_dicts = [] # list of dictionaries with the parameters for each test
     # make parameter dictionaries and file structure
+    start = time.perf_counter()
     for i,test_name in enumerate(test_names):
         os.mkdir(f"diffusion_results_ABM/{test_name}")
         print("Starting test: ", test_name)
+        print(f"{i/len(test_names)*100:.2f}% completed")
+        current = time.perf_counter()
+        print(f"Running for {(current-start)/60:.2f} minutes")
         for j,diffusion in enumerate(diffusions):
             print("Starting diffusion: ", diffusion)
+            print(f"{i/len(test_names)*100+j/(len(diffusions)*len(test_names))*100:.2f}% completed")
+            current = time.perf_counter()
+            print(f"Running for {(current-start)/60:.2f} minutes")
             os.mkdir(f"diffusion_results_ABM/{test_name}/diffusion_{diffusion}")
             param_dict = parameters_ABM.copy()
             param_dict["diffusion_rate"] = diffusion
