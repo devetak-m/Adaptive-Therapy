@@ -11,11 +11,11 @@ parameters = {
     "S0": 2000,
     "R0": 200,
     "N0": 0,
-    "grS": 0.0,
-    "grR": 0.0,
+    "grS": 0.023,
+    "grR": 0.023,
     "grN": 0.00,
-    "drS": 0.0,
-    "drR": 0.0,
+    "drS": 0.01,
+    "drR": 0.01,
     "drN": 0.0,
     "divrS": 0.75,
     "divrN": 0.5,
@@ -30,11 +30,11 @@ parameters = {
     "foldername": "data/diffusion_test",
     "save_frequency": 100,
 }
-diffusion_rates = [1]
+diffusion_rates = [0.0]
 for diffusion_rate in diffusion_rates:
     parameters["diffusion_rate"] = diffusion_rate
-    parameters["foldername"] = f"data/diffusion_test_{diffusion_rate}_shuffled"
+    parameters["foldername"] = f"data/diffusion_test_{diffusion_rate}_dynamics"
     model = ABM_model(parameters,True)
     model.run(parameters["therapy"])
     fig,ax,anim = model.animate_cells_graph(stride=2)
-    anim.save(f"media/diffusion_test{diffusion_rate}_shuffled.mp4")
+    anim.save(f"media/diffusion_test{diffusion_rate}_dynamics.mp4")

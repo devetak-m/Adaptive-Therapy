@@ -5,3 +5,4 @@ media/
 test_voxel_animation.py
 venv
 data/
+diffusion_results_ABM/

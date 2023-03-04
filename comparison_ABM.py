@@ -34,8 +34,8 @@ def comparison_ABM(parameters, nruns, theshold, folder_name = None):
     ttp = np.zeros(nruns)
 
     # initialize the arrays that will store the densities
-    densities_S = np.zeros((nruns, int(parameters["T"] * (1/parameters["dt"]))))
-    densities_R = np.zeros((nruns, int(parameters["T"] * (1/parameters["dt"]))))
+    densities_S = np.zeros((nruns, parameters["T"]))
+    densities_R = np.zeros((nruns, parameters["T"]))
 
 
     # run the model nruns in parallel
@@ -109,8 +109,6 @@ if __name__ == "__main__":
         "seed" : 1}
     # NUMBER OF RUNS
     nruns = 1
-
-    # define parameters to compare
     therapies = ["continuous", "adaptive", "notherapy"]
     n_tests = 8
 
