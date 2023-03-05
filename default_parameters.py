@@ -23,6 +23,6 @@ parameters = {
     "dimension": 2,
     "diffusion_rate": 0.1,
     "seed": 0,
-    "foldername": "data/diffusion_test",
+    "foldername": None,
     "save_frequency": 100,
 }

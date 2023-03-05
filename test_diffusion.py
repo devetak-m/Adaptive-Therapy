@@ -19,8 +19,8 @@ parameters = {
     "drN": 0.0,
     "divrS": 0.75,
     "divrN": 0.5,
-    "therapy": "adaptive",
-    "initial_condition_type": "resistant_core",
+    "therapy": "continuous",
+    "initial_condition_type": "resistant_rim",
     "fill_factor": 0.8,
     "core_locations": np.array([[domain_size//3,domain_size//3],[2*domain_size//3,2*domain_size//3],[1*domain_size//3,2*domain_size//3],[2*domain_size//3,1*domain_size//3]]),
     "save_locations": True,
@@ -30,11 +30,11 @@ parameters = {
     "foldername": "data/diffusion_test",
     "save_frequency": 100,
 }
-diffusion_rates = [0.0]
+diffusion_rates = [1.0]
 for diffusion_rate in diffusion_rates:
     parameters["diffusion_rate"] = diffusion_rate
-    parameters["foldername"] = f"data/diffusion_test_{diffusion_rate}_dynamics"
+    parameters["foldername"] = f"data/diffusion_{diffusion_rate}_rim_continuous"
     model = ABM_model(parameters,True)
     model.run(parameters["therapy"])
     fig,ax,anim = model.animate_cells_graph(stride=2)
-    anim.save(f"media/diffusion_test{diffusion_rate}_dynamics.mp4")
+    anim.save(f"media/diffusion_{diffusion_rate}_rim_continuous.mp4")
