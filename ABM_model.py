@@ -218,7 +218,7 @@ class ABM_model:
                 elif "resistant_rim" in initial_condition_type:
                     self.grid[self.grid == self.cell_here] = self.sensitive_type
                     # set the R0 cells on the rim to be resistant
-                    for i in range(self.R0//core_locations.shape[0]):
+                    for i in range(1,self.R0//core_locations.shape[0]+1):
                         self.grid[tuple(cell_locations[-i])] = self.resistant_type
                     if self.verbose:
                         print("Generated cells: ", N_generated)
@@ -274,7 +274,7 @@ class ABM_model:
                     self.grid[tuple(cell_locations[i])] = self.resistant_type
             elif "resistant_rim" in initial_condition_type:
                 # set the R0 cells on the rim to be resistant
-                for i in range(self.R0):
+                for i in range(1,self.R0+1):
                     self.grid[tuple(cell_locations[-i])] = self.resistant_type
             elif "uniform_ball" in initial_condition_type:
                 # set random cells to be resistant
