@@ -8,7 +8,7 @@ parameters_ABM = {
     "T" : 2,
     "dt" : 1,
     "S0" : 8000,
-    "R0" : 800,
+    "R0" : 80,
     "N0" : 0,
     "grS" : 0.023,
     "grR" : 0.023,
@@ -21,17 +21,20 @@ parameters_ABM = {
     "therapy" : "continuous",
     "initial_condition_type" : "uniform",
     "fill_factor":1,
+    "diffusion_rate": 0.01,
     "core_locations": np.array([[domain_size//4,domain_size//4],[3*domain_size//4,3*domain_size//4]]),
     "save_locations" : False,
     "dimension" : 2,
     "seed" : 1}
-new_size = 30
+new_size = 40
 def save_initial_conditions(parameters_ABM,filename= None, show = True):
     S0 = parameters_ABM["S0"]
     R0 = parameters_ABM["R0"]
     total = S0+R0
     model = ABM_model(parameters_ABM)
     grid = model.grid
+    plt.imshow(grid)
+    plt.show()
     sensitive_grid = np.zeros(grid.shape)
     sensitive_grid[grid==1] = 255
     resistant_grid = np.zeros(grid.shape)
@@ -49,8 +52,8 @@ def save_initial_conditions(parameters_ABM,filename= None, show = True):
     resistant_array *= (R0/(total))/np.sum(resistant_array)
     np.sum(sensitive_array+resistant_array)
     print(np.sum(sensitive_array)/np.sum(resistant_array))
-    np.save(f"{filename}_sensitive_40.npy",sensitive_array)
-    np.save(f"{filename}_resistant_40.npy",resistant_array)
+    np.save(f"{filename}_sensitive_{new_size}.npy",sensitive_array)
+    np.save(f"{filename}_resistant_{new_size}.npy",resistant_array)
     if show:
         fig,ax = plt.subplots(1,2)
         ax[0].axis("off")
