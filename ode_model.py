@@ -151,7 +151,14 @@ def ode_model(parameters, verbose=False):
     current_index += 1
 
     return S[:current_index], R[:current_index], N[:current_index], T[:current_index], D[:current_index]
-       
+
+def time_to_progression(S, R, N, T, D,parameters):
+    total = S+R
+    initial_size = parameters["R0"]+parameters["S0"]
+    for i in range(len(total)):
+        if total[i] > 1.25*initial_size:
+            return T[i]
+    return 0
 
 if __name__ == "__main__":
 
@@ -160,17 +167,17 @@ if __name__ == "__main__":
     parameters = {
         'time_start': 0,                                  
         'time_end': 2000,
-        'time_step': 0.1,
+        'time_step': 1,
         'tolerance': 100,
-        'S0': 1,
-        'R0': 0.1,
-        'growth_rate_S': 0.04,
-        'growth_rate_R': 0.04,
-        'carrying_capacity': 4.9,
+        'S0': 0.2,
+        'R0': 0.002,
+        'growth_rate_S': 0.023,
+        'growth_rate_R': 0.023,
+        'carrying_capacity': 1.77,
         'maximum_tollerated_dose': 1,
-        'death_rate_S': 0.03,
-        'death_rate_R': 0.03,
-        'division_rate': 0.03,
+        'death_rate_S': 0.01,
+        'death_rate_R': 0.01,
+        'division_rate': 0.75,
         'therapy_type': 'adaptive',
         'current_state': 1,
     }
@@ -178,10 +185,16 @@ if __name__ == "__main__":
     test_parameters(parameters)
 
     S, R, N, T, D = ode_model(parameters, verbose=False)
-
-    plt.plot(T, S, label='S')
-    plt.plot(T, R, label='R')
-    plt.plot(T, N, label='N', linestyle='--')
-    plt.plot(T, D, label='D')
-    plt.legend()
-    plt.show()
+    ttp = time_to_progression(S, R, N, T, D, parameters)
+    print(ttp)
+    fig,ax = plt.subplots()
+    ax.plot(T, S, label='S')
+    ax.plot(T, R, label='R')
+    ax.plot(T, N, label='N', linestyle='--')
+    ax.plot(T, D, label='D')
+    # ax.vlines(ttp, 0, 1.5, label='TTP', color='k', linestyle='--')
+    initial_size = parameters["R0"]+parameters["S0"]
+    ax.hlines(initial_size*1.25, 0, 2000, label='Threshold', color='k', linestyle='--')
+    ax.legend(loc = 'upper right')
+    ax.set(xlabel='Time (days)', ylabel='Density of cells',title=f"{parameters['therapy_type'].capitalize()}")
+    plt.savefig(f'shared_media/ode_base_case_{parameters["therapy_type"]}.png')

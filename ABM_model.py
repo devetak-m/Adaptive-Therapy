@@ -861,8 +861,8 @@ class ABM_model:
         ax0.set_xlabel("Time")
         ax0.set_ylabel("Density")
         total_max = np.max(np.sum(self.data[:,0:3],axis=1))
-        ax0.set(xlim=(0, self.T),ylim=(0,total_max))
-        ax0.legend()
+        ax0.set(xlim=(0, self.T*self.dt),ylim=(0,total_max))
+        ax0.legend(loc="upper left")
         print(self.T)
         nFrames = (self.T - 1)//stride
         print(nFrames)
@@ -883,17 +883,16 @@ class ABM_model:
         def update(j):
             i = j * stride
             if self.verbose:
-                if j//50==0:
+                if j%20==0:
                     print("Updating frame", j, "of", nFrames)
-            lineS.set_data(np.arange(1, i), self.data[1:i, 0])
-            lineR.set_data(np.arange(1, i), self.data[1:i, 1])
-            # lineN.set_data(np.arange(1, i), self.data[1:i, 2])
-            lineT.set_data(np.arange(1, i), self.data[1:i, 0]+self.data[1:i,1])
-            lineD.set_data(np.arange(1, i), self.data[1:i, 3] * 100)
+            time = np.arange(1, i)*stride*self.dt
+            lineS.set_data(time, self.data[1:i, 0])
+            lineR.set_data(time, self.data[1:i, 1])
+            # lineN.set_data(time, self.data[1:i, 2])
+            lineT.set_data(time, self.data[1:i, 0]+self.data[1:i,1])
+            lineD.set_data(time, self.data[1:i, 3] * 100)
 
             if self.dimension == 2:
-                if i%100==0 and self.verbose:
-                    print("Frame: ",i," of ",nFrames*stride,"")
                 ax1.clear()
                 ax1.axis("off")
                 ax1.axis("equal")
@@ -1041,13 +1040,13 @@ class ABM_model:
 if __name__ == "__main__":
 
     # set up parameters
-    domain_size = 40
+    domain_size = 100
     parameters = {
         "domain_size": domain_size,
         "T": 400,
         "dt": 2,    
-        "S0": 20000,
-        "R0": 1000,
+        "S0": 2000,
+        "R0": 20,
         "N0": 0,
         "grS": 0.023,
         "grR": 0.023,
@@ -1057,27 +1056,24 @@ if __name__ == "__main__":
         "drN": 0.0,
         "divrS": 0.75,
         "divrN": 0.5,
-        "therapy": "adaptive",
-        "initial_condition_type": "cluster_3d",
+        "diffusion_rate": 0.1,
+        "therapy": "continuous",
+        "initial_condition_type": "resistant_core",
         "fill_factor": 0.8,
         "core_locations": np.array([[domain_size//3,domain_size//3],[2*domain_size//3,2*domain_size//3],[1*domain_size//3,2*domain_size//3],[2*domain_size//3,1*domain_size//3]]),
         "save_locations": True,
-        "dimension": 3,
+        "dimension": 2,
         "seed": 4,
-        "foldername": "data/new_adaptive_data3",
+        "foldername": None,
         "save_frequency": 100,
     }
 
     # set up model
     model = ABM_model(parameters,True)
-    # plot grid of initial conditinons for 2d
-    # fig, ax = plt.subplots(1, 1)
-    # model.plot_grid2(ax)
-    # plt.show()
-    # S0 = model.data[0, 0]
-    # R0 = model.data[0, 1]
-    # print(f"S0: {S0}")
-    # print(f"R0: {R0}")
+    model.run(parameters["therapy"])
+    print("Model run complete.")
+    fig,ax,anim = model.animate_cells_graph(stride=1)
+    anim.save(f"media/resistant_core_{parameters['therapy']}.mp4")
 
 
     # show grid of initial conditions
@@ -1085,13 +1081,13 @@ if __name__ == "__main__":
     # ax = fig.add_subplot(111, projection="3d")
     # model.plot_cells_3d(0, ax,clip=True)
     # run model
-    model.run(parameters["therapy"])
-    print("Model run complete.")
-    fig1,ax1 = plt.subplots()
-    model.plot_celltypes_density(ax1)
-    plt.show()
-    fig,ax,anim = model.animate_cells_graph(stride=1)
-    anim.save("media/large_adaptive2.mp4")
+    # model.run(parameters["therapy"])
+    # print("Model run complete.")
+    # fig1,ax1 = plt.subplots()
+    # model.plot_celltypes_density(ax1)
+    # plt.show()
+    # fig,ax,anim = model.animate_cells_graph(stride=1)
+    # anim.save("media/large_adaptive2.mp4")
 
     # load data
     # model.load_locations("data/new_adaptive_data")

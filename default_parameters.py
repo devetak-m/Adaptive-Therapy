@@ -1,11 +1,11 @@
 import numpy as np
-domain_size = 100
+domain_size = 500
 parameters = {
     "domain_size": domain_size,
     "T": 500,
     "dt": 1,    
-    "S0": 2000,
-    "R0": 200,
+    "S0": 50000,
+    "R0": 500,
     "N0": 0,
     "grS": 0.023,
     "grR": 0.023,
@@ -18,7 +18,7 @@ parameters = {
     "therapy": "adaptive",
     "initial_condition_type": "resistant_core",
     "fill_factor": 0.8,
-    "core_locations": np.array([[domain_size//3,domain_size//3],[2*domain_size//3,2*domain_size//3],[1*domain_size//3,2*domain_size//3],[2*domain_size//3,1*domain_size//3]]),
+    "core_locations": np.array([[domain_size//4,domain_size//4],[3*domain_size//4,3*domain_size//4]]),
     "save_locations": True,
     "dimension": 2,
     "diffusion_rate": 0.1,

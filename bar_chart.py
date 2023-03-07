@@ -11,7 +11,7 @@ def bar_chart(means,std):
     names = means.values[:,0]
     mean_data = means.values[:,1:]
     std_data = std.values[:,1:]
-    x = np.arange(len(names))  # the label locations
+    label_locations = np.arange(len(names))  # the label locations
     width = 0.25  # the width of the bars
     multiplier = 0
     # sort by max adaptive
@@ -36,9 +36,9 @@ def bar_chart(means,std):
     ax.legend()
 
 def percentage_increase_bar_chart(means,std):
-    names = means.values[:,0]
-    continous_means = np.array(means.values[:,1])
-    adaptive_means = np.array(means.values[:,2])
+    names = np.array(means.index)
+    continous_means = np.array(means.values[:,0])
+    adaptive_means = np.array(means.values[:,1])
     percentage_increase = 100*(adaptive_means-continous_means)/continous_means 
     continous_std = np.array(std.values[:,1])
     adaptive_std = np.array(std.values[:,2])
@@ -49,25 +49,53 @@ def percentage_increase_bar_chart(means,std):
     sorted_percentage = percentage_increase[sortkey]
     sorted_std = percentage_std[sortkey]
     fig,ax = plt.subplots()
-    ax.barh(sorted_names,sorted_percentage,xerr=sorted_std)
+    bar = ax.barh(sorted_names,sorted_percentage,xerr=sorted_std)
+    bar[list(sorted_names).index("ODE")].set_color("red")
     ax.set_xlabel("Percentage increase in adaptive TTP over continuous TTP")
-    plt.tight_layout()
-    plt.show()
+    ax.vlines(0,-0.5,len(sorted_names)-0.5,linestyle="--",color="black")
+    return ax
 
 
 if __name__ == "__main__":
-    foldername = "results_ABM_domain_size_100_fr_0.01"
-    means = pd.read_csv(f"{foldername}/comparison_means.csv")
-    std = pd.read_csv(f"{foldername}/comparison_std.csv")
-    ODE_means = [100,120,20]
+    foldername = "data/diffusion_results_ABM"
+    means = pd.read_csv(f"{foldername}/comparison_means_diffusion_1.csv",index_col="initial_condition")
+    std = pd.read_csv(f"{foldername}/comparison_std_diffusion_1.csv",index_col="initial_condition")
+    ODE_means = [406,439,23]
     ODE_std = [0.0,0.0,0.0]
-    # means.loc["ODE"] = ODE_means
-    # std.loc["ODE"] = ODE_std
-    print(means)
-    print(std)
+    means.loc["ODE"] = ODE_means
+    std.loc["ODE"] = ODE_std
     # bar_chart(means,std)
-    # todo investigate ordering by ratio of SE to RE
     percentage_increase_bar_chart(means,std)
-    plt.show()
+    plt.tight_layout()
+    plt.savefig("shared_media/TTP_increase_with_diffusion_1.png")
+
+
+    ##  for diffusion
+    # mean_dfs = []
+    # std_dfs = []
+    # diffusions = [0.01,0.05,0.1,0.5,1]
+    # mean_values = np.zeros((len(diffusions),8,3))
+    # std_values = np.zeros((len(diffusions),8,3))
+    # for i,diffusion in enumerate(diffusions):
+    #     foldername = "data/diffusion_results_ABM"
+    #     means = pd.read_csv(f"{foldername}/comparison_means_diffusion_{diffusion}.csv",index_col="initial_condition")
+    #     std = pd.read_csv(f"{foldername}/comparison_std_diffusion_{diffusion}.csv",index_col="initial_condition")
+    #     mean_values[i,:,:] = means.values
+    #     std_values[i,:,:] = std.values
+    # resistant_core_means = mean_values[:,0,:]
+    # resistant_core_std = std_values[:,0,:]
+    # resistant_core_names = [f"Diffusion = {diffusion}" for diffusion in diffusions]
+    # resistant_core_means_df = pd.DataFrame(resistant_core_means,columns=["continuous","adaptive","notherapy"],index=resistant_core_names)
+    # resistant_core_std_df = pd.DataFrame(resistant_core_std,columns=["continuous","adaptive","notherapy"],index=resistant_core_names)
+    # ODE_means = [406,439,23]
+    # ODE_std = [0.0,0.0,0.0]
+    # resistant_core_means_df.loc["ODE"] = ODE_means
+    # resistant_core_std_df.loc["ODE"] = ODE_std
+    # # bar_chart(means,std)
+    # ax = percentage_increase_bar_chart(resistant_core_means_df,resistant_core_std_df)
+    # ax.set(title="Resistant Core TTP increase with Diffusion")
+    # plt.tight_layout()
+    # plt.savefig("shared_media/resistant_core_TTP_increase_with_diffusion.png")
+
 
 
