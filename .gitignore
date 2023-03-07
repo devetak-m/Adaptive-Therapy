@@ -6,3 +6,5 @@ test_voxel_animation.py
 venv
 data/
 diffusion_results_ABM/
+results_ABM_domain_size_100_fr_0.01
+results_ABM_domain_size_400_fr_0.1

@@ -56,8 +56,15 @@ def percentage_increase_bar_chart(means,std):
 
 
 if __name__ == "__main__":
-    means = pd.read_csv("results_ABM_computed/comparison_means.csv")
-    std = pd.read_csv("results_ABM_computed/comparison_std.csv")
+    foldername = "results_ABM_domain_size_100_fr_0.01"
+    means = pd.read_csv(f"{foldername}/comparison_means.csv")
+    std = pd.read_csv(f"{foldername}/comparison_std.csv")
+    ODE_means = [100,120,20]
+    ODE_std = [0.0,0.0,0.0]
+    # means.loc["ODE"] = ODE_means
+    # std.loc["ODE"] = ODE_std
+    print(means)
+    print(std)
     # bar_chart(means,std)
     # todo investigate ordering by ratio of SE to RE
     percentage_increase_bar_chart(means,std)
