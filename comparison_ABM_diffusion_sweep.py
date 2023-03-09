@@ -6,6 +6,7 @@ import pandas as pd
 import time
 import pickle
 import os 
+import shutil
 def run_ABM(parameters, i, theshold):
     # set the seed
     parameters['seed'] = i
@@ -56,9 +57,7 @@ def comparison_ABM(parameters, nruns, theshold, folder_name = None):
     S_std = np.std(densities_S, axis=0)
     R_mean = np.mean(densities_R, axis=0)
     R_std = np.std(densities_R, axis=0)
-    np.savez(f"{folder_name}_densities.npz", S_mean=S_mean, S_std=S_std, R_mean=R_mean, R_std=R_std)
-    np.save(f"{folder_name}_densities_S.npy", densities_S)
-    np.save(f"{folder_name}_densities_R.npy", densities_R)
+    np.savez(f"{folder_name}_densities.npz", S_mean=S_mean, S_std=S_std, R_mean=R_mean, R_std=R_std,densities_S=densities_S,densities_R=densities_R)
 
     # plot the average density of the model with error bars
     plt.figure()
@@ -91,13 +90,13 @@ if __name__ == "__main__":
     # print("Starting the simulation...")
 
     # define the parameters of the model
-    domain_size = 5
+    domain_size = 100
     parameters_ABM = {
         "domain_size" : domain_size,
-        "T" : 2,
+        "T" : 2000,
         "dt" : 0.05,
-        "S0" : 10,
-        "R0" : 1,
+        "S0" : 2000,
+        "R0" : 20,
         "N0" : 0,
         "grS" : 0.023,
         "grR" : 0.023,
@@ -117,18 +116,26 @@ if __name__ == "__main__":
     # NUMBER OF RUNS
     nruns = 10
     theshold = 1.25
-    test_names = ["resistant_core","uniform_ball_1.0"]
+    test_names = ["resistant_core","uniform"]
     # test_names = ["resistant_core","resistant_rim","multiple_resistant_cores","multiple_resistant_rims","uniform_ball_0.8","uniform_ball_0.9","uniform_ball_1.0","uniform"]
     # diffusions = [0.01,10]
-    diffusions = [0.01,10]
+    diffusions = [0.0]
     therapies = ["continuous","adaptive","notherapy"]
     time_to_progression = np.zeros((len(test_names), len(diffusions),len(therapies)))
     std_time_to_progression = np.zeros((len(test_names), len(diffusions),len(therapies)))
     param_dicts = [] # list of dictionaries with the parameters for each test
     # make parameter dictionaries and file structure
     start = time.perf_counter()
+    overwrite = True
     for i,test_name in enumerate(test_names):
-        os.mkdir(f"diffusion_results_ABM/{test_name}")
+        try:
+            os.mkdir(f"diffusion_results_ABM/{test_name}")
+        except FileExistsError:
+            if overwrite:
+                shutil.rmtree(f"diffusion_results_ABM/{test_name}")
+                os.mkdir(f"diffusion_results_ABM/{test_name}")
+            else:
+                raise FileExistsError(f"File diffusion_results_ABM/{test_name} already exists. Set overwrite to True to overwrite.")
         print("Starting test: ", test_name)
         print(f"{i/len(test_names)*100:.2f}% completed")
         current = time.perf_counter()
@@ -153,6 +160,7 @@ if __name__ == "__main__":
             # pickle the parameter dictionary in a file
             pickle.dump(param_dict, open(f"diffusion_results_ABM/{test_name}/diffusion_{diffusion}/parameters.p", "wb"))
             for k,therapy in enumerate(therapies):
+                print("Starting Therapy: ", therapy)
                 param_dict["therapy"] = therapy
                 mean,std = comparison_ABM(param_dict, nruns, theshold, f"diffusion_results_ABM/{test_name}/diffusion_{diffusion}/{therapy}")
                 time_to_progression[i,j,k] = mean

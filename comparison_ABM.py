@@ -54,7 +54,7 @@ def comparison_ABM(parameters, nruns, theshold, folder_name = None):
     S_std = np.std(densities_S, axis=0)
     R_mean = np.mean(densities_R, axis=0)
     R_std = np.std(densities_R, axis=0)
-    np.savez(f"{folder_name}_densities.npz", S_mean=S_mean, S_std=S_std, R_mean=R_mean, R_std=R_std)
+    np.savez(f"{folder_name}_densities.npz", S_mean=S_mean, S_std=S_std, R_mean=R_mean, R_std=R_std,densities_S=densities_S, densities_R=densities_R)
 
     # plot the average density of the model with error bars
     plt.figure()
