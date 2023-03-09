@@ -114,7 +114,7 @@ if __name__ == "__main__":
         "dimension" : 2,
         "seed" : 1}
     # NUMBER OF RUNS
-    nruns = 10
+    nruns = 100
     theshold = 1.25
     test_names = ["resistant_core","uniform"]
     # test_names = ["resistant_core","resistant_rim","multiple_resistant_cores","multiple_resistant_rims","uniform_ball_0.8","uniform_ball_0.9","uniform_ball_1.0","uniform"]
